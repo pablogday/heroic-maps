@@ -1,65 +1,207 @@
+import Link from "next/link";
 import Image from "next/image";
+import { auth } from "@/auth";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { PageReveal } from "@/components/PageReveal";
+import { MapCard } from "@/components/MapCard";
+import {
+  getFeaturedMaps,
+  getRecentlyAdded,
+  getRecentlyReviewed,
+  VERSIONS,
+} from "@/lib/maps";
+import { formatRelativeTime } from "@/lib/relative-time";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+  const viewerId = session?.user?.id ?? null;
+  const signedIn = viewerId != null;
+
+  const [featured, recentlyAdded, recentlyReviewed] = await Promise.all([
+    getFeaturedMaps(3, viewerId),
+    getRecentlyAdded(4),
+    getRecentlyReviewed(4),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="relative z-10 flex flex-col flex-1">
+      <SiteHeader />
+
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
+       <PageReveal>
+        <section className="mb-12 text-center">
+          <h1 className="font-display text-5xl md:text-6xl text-ink">
+            Maps worthy of <span className="text-blood">heroes</span>.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-soft">
+            A modern home for the HoMM3 community — browse, filter, review and
+            download maps for SoD, HotA, WoG, Chronicles and beyond.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link
+              href="/maps"
+              className="btn-brass rounded px-6 py-2.5 font-display"
+            >
+              Browse maps
+            </Link>
+            <Link
+              href="/upload"
+              className="rounded border border-ink/20 bg-parchment-dark/40 px-6 py-2.5 font-display text-ink hover:bg-parchment-dark/70"
+            >
+              Upload a map
+            </Link>
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+            Browse by version
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {VERSIONS.map((v) => (
+              <Link
+                key={v}
+                href={`/maps?version=${v}`}
+                className="rounded border border-brass/50 bg-parchment-dark/30 px-3 py-1 text-sm text-ink hover:bg-brass/20"
+              >
+                {v}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="font-display text-2xl text-ink">Latest activity</h2>
+            <Link
+              href="/feed"
+              className="text-sm text-blood hover:underline"
+            >
+              See full feed →
+            </Link>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Newly added */}
+            <div className="card-brass rounded p-5">
+              <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+                ✦ Newly added
+              </h3>
+              <ul className="divide-y divide-brass/20">
+                {recentlyAdded.map((m) => (
+                  <li key={m.id}>
+                    <Link
+                      href={`/maps/${m.slug}`}
+                      className="flex items-center gap-3 py-2 hover:text-blood"
+                    >
+                      {m.previewKey ? (
+                        <Image
+                          src={m.previewKey}
+                          alt=""
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 flex-shrink-0 rounded object-cover pixelated bg-night-deep"
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="h-10 w-10 flex-shrink-0 rounded bg-night-deep" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-ink group-hover:text-blood">
+                          {m.name}
+                        </div>
+                        <div className="text-xs text-ink-soft">
+                          {m.version} · {formatRelativeTime(m.addedAt)}
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Latest reviews */}
+            <div className="card-brass rounded p-5">
+              <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+                ✦ Latest reviews
+              </h3>
+              {recentlyReviewed.length === 0 ? (
+                <p className="text-sm text-ink-soft">
+                  No reviews yet — be the first.
+                </p>
+              ) : (
+                <ul className="divide-y divide-brass/20">
+                  {recentlyReviewed.map((r) => (
+                    <li key={r.reviewId} className="py-2">
+                      <Link
+                        href={`/maps/${r.mapSlug}`}
+                        className="flex items-start gap-3 hover:text-blood"
+                      >
+                        {r.authorImage ? (
+                          <Image
+                            src={r.authorImage}
+                            alt=""
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 flex-shrink-0 rounded-full border border-brass/40"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="h-8 w-8 flex-shrink-0 rounded-full bg-brass/30" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className="truncate text-sm font-medium text-ink">
+                              {r.mapName}
+                            </span>
+                            <span className="text-xs text-brass">
+                              {"★".repeat(r.rating)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-ink-soft">
+                            {r.authorName ?? "Anonymous"} ·{" "}
+                            {formatRelativeTime(r.createdAt)}
+                          </div>
+                          {r.body && (
+                            <p className="mt-1 line-clamp-1 text-xs text-ink-soft/90">
+                              {r.body}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-4 flex items-baseline justify-between">
+            <h2 className="font-display text-2xl text-ink">Top rated</h2>
+            <Link
+              href="/maps?sort=rating"
+              className="text-sm text-blood hover:underline"
+            >
+              See all →
+            </Link>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {featured.map((m) => (
+              <MapCard
+                key={m.id}
+                map={m}
+                signedIn={signedIn}
+                imageSizes="(max-width: 768px) 100vw, 33vw"
+              />
+            ))}
+          </div>
+        </section>
+       </PageReveal>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

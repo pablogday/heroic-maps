@@ -1,26 +1,202 @@
 @import "tailwindcss";
 
+/*
+  Heroic Maps — retro-modern HoMM3 palette.
+  Parchment, brass, deep night-blue, blood red.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --parchment: #efe2c3;
+  --parchment-dark: #d9c79a;
+  --ink: #2a1a0d;
+  --ink-soft: #4a3520;
+  --brass: #b88a3a;
+  --brass-bright: #e0b656;
+  --night: #1a2342;
+  --night-deep: #0e1428;
+  --blood: #8a2222;
+  --emerald: #2f6e4a;
+
+  --background: var(--parchment);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-parchment: var(--parchment);
+  --color-parchment-dark: var(--parchment-dark);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-brass: var(--brass);
+  --color-brass-bright: var(--brass-bright);
+  --color-night: var(--night);
+  --color-night-deep: var(--night-deep);
+  --color-blood: var(--blood);
+  --color-emerald: var(--emerald);
+  --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(ellipse at top, rgba(184, 138, 58, 0.12), transparent 60%),
+    radial-gradient(ellipse at bottom, rgba(26, 35, 66, 0.08), transparent 60%),
+    var(--background);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Subtle parchment texture via SVG noise */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.10  0 0 0 0 0.05  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+/* Brass-bordered card */
+.card-brass {
+  background: linear-gradient(180deg, #f5e8c8 0%, #e6d2a3 100%);
+  border: 1px solid var(--brass);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 230, 180, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.4),
+    0 8px 24px -10px rgba(42, 26, 13, 0.4);
+}
+
+.btn-brass {
+  background: linear-gradient(180deg, var(--brass-bright) 0%, var(--brass) 100%);
+  border: 1px solid #6e521f;
+  color: #2a1a0d;
+  text-shadow: 0 1px 0 rgba(255, 230, 180, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 200, 0.7),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(42, 26, 13, 0.3);
+  transition: transform 80ms ease, box-shadow 80ms ease, filter 80ms ease;
+}
+.btn-brass:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+.btn-brass:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* Pixel-art map previews — keep crisp edges when scaled up. */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* --- Boot splash -------------------------------------------------------- */
+
+/* Set by an inline <head> script when sessionStorage says the splash has
+   already been shown this session. Hides it before paint so repeat
+   navigations don't flash. */
+.hm-splash-seen .hm-splash {
+  display: none !important;
+}
+
+/* --- Cursor swap -------------------------------------------------------- */
+
+/* HoMM3-flavored sword cursor used for anything clickable. Hotspot at the
+   sword tip (top-left, 4 4). Sized 28x28 — most browsers will ignore
+   anything over 32px. Inline SVG so there's no extra request. */
+:root {
+  --cursor-sword: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='%23e0b656' stroke='%23231509' stroke-width='1.2' stroke-linejoin='round'><path d='M3 3 L9 4 L20 17 L17 20 L4 9 Z'/><path d='M16 18 L21 13 L24 16 L19 21 Z'/><circle cx='22.5' cy='14.5' r='1.4' fill='%238a2222'/></g><path d='M4 4 L8 8' stroke='%23fff1c4' stroke-width='0.8' fill='none'/></svg>") 4 4, pointer;
+}
+
+a:not([class*="no-cursor"]),
+button:not(:disabled),
+[role="button"],
+summary,
+label[for],
+select,
+.btn-brass {
+  cursor: var(--cursor-sword);
+}
+
+/* Don't fight the text cursor inside inputs/textareas. */
+input,
+textarea,
+[contenteditable="true"] {
+  cursor: text;
+}
+
+/* Disabled controls keep the standard not-allowed signal. */
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* --- Loaders ------------------------------------------------------------ */
+
+/* Scroll unfurling vertically. */
+@keyframes unfurl {
+  0%   { transform: scaleY(0.04); opacity: 0.6; }
+  60%  { transform: scaleY(1.04); opacity: 1; }
+  80%  { transform: scaleY(0.98); }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+.animate-unfurl {
+  transform-origin: top center;
+  animation: unfurl 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Torch flicker — subtle warm glow + tiny scale wobble. */
+@keyframes torch-flicker {
+  0%, 100% { opacity: 1;    filter: drop-shadow(0 0 6px rgba(224, 182, 86, 0.7)); transform: scale(1); }
+  20%      { opacity: 0.85; filter: drop-shadow(0 0 4px rgba(224, 182, 86, 0.5)); transform: scale(0.98); }
+  40%      { opacity: 1;    filter: drop-shadow(0 0 10px rgba(224, 182, 86, 0.9)); transform: scale(1.03); }
+  55%      { opacity: 0.9;  filter: drop-shadow(0 0 5px rgba(224, 182, 86, 0.6)); transform: scale(0.99); }
+  70%      { opacity: 1;    filter: drop-shadow(0 0 8px rgba(224, 182, 86, 0.85)); transform: scale(1.01); }
+}
+.animate-flicker {
+  animation: torch-flicker 1.6s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+/* Page reveal — runs on mount of route content. Pairs with the unfurl
+   loader so navigations feel like a hand-off rather than a snap. */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.page-in {
+  animation: page-in 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in,
+  .animate-unfurl,
+  .animate-flicker,
+  .parchment-shimmer { animation: none; }
+}
+
+/* Slow shimmer across parchment skeletons. */
+@keyframes parchment-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.parchment-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(184, 138, 58, 0.10) 0%,
+    rgba(224, 182, 86, 0.28) 50%,
+    rgba(184, 138, 58, 0.10) 100%
+  );
+  background-size: 200% 100%;
+  animation: parchment-shimmer 2.4s ease-in-out infinite;
 }
