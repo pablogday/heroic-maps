@@ -7,8 +7,8 @@
  */
 export function stagger(
   index: number,
-  step = 35,
-  cap = 500
+  step = 65,
+  cap = 800
 ): { className: string; style: { animationDelay: string } } {
   const delay = Math.min(index * step, cap);
   return {
