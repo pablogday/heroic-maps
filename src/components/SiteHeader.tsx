@@ -32,7 +32,6 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <MobileNav />
           {user ? (
             <UserMenu name={user.name} image={user.image} />
           ) : (
@@ -46,6 +45,7 @@ export async function SiteHeader() {
               </button>
             </form>
           )}
+          <MobileNav />
         </div>
       </div>
     </header>
