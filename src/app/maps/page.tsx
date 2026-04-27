@@ -107,49 +107,51 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
           <ul className="flex flex-col gap-2">
             {items.map((m) => (
               <li key={m.id}>
-                <div className="card-brass flex gap-4 rounded p-3">
-                  {m.previewKey ? (
-                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded bg-night-deep">
-                      <Image
-                        src={m.previewKey}
-                        alt=""
-                        fill
-                        sizes="80px"
-                        className="object-cover pixelated"
-                        unoptimized
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-20 w-20 flex-shrink-0 rounded bg-night-deep" />
-                  )}
-                  <div className="flex flex-1 flex-col min-w-0">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h3 className="font-display text-base text-ink truncate">
-                        {m.name}
-                      </h3>
-                      <span className="text-xs uppercase tracking-wider text-ink-soft flex-shrink-0">
-                        {m.version}
-                      </span>
-                    </div>
-                    <p className="mt-1 line-clamp-1 text-sm text-ink-soft">
-                      {m.description ?? "No description provided."}
-                    </p>
-                    <div className="mt-1.5 flex items-center gap-3 text-xs text-ink-soft">
-                      <span>{SIZE_LABEL[m.size as Size]}</span>
-                      <span>·</span>
-                      <span>
-                        {m.humanPlayers}–{m.totalPlayers} players
-                      </span>
-                      <span>·</span>
-                      <span>↓ {m.downloadCount.toLocaleString()}</span>
-                      <span>·</span>
-                      <RatingBadge
-                        ratingSum={m.ratingSum}
-                        ratingCount={m.ratingCount}
-                      />
+                <div className="card-brass flex flex-col gap-3 rounded p-3 sm:flex-row sm:gap-4">
+                  <div className="flex gap-3 sm:contents">
+                    {m.previewKey ? (
+                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded bg-night-deep">
+                        <Image
+                          src={m.previewKey}
+                          alt=""
+                          fill
+                          sizes="80px"
+                          className="object-cover pixelated"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-20 w-20 flex-shrink-0 rounded bg-night-deep" />
+                    )}
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <h3 className="font-display text-base text-ink truncate">
+                          {m.name}
+                        </h3>
+                        <span className="text-xs uppercase tracking-wider text-ink-soft flex-shrink-0">
+                          {m.version}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-1 text-sm text-ink-soft">
+                        {m.description ?? "No description provided."}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-soft">
+                        <span>{SIZE_LABEL[m.size as Size]}</span>
+                        <span>·</span>
+                        <span>
+                          {m.humanPlayers}–{m.totalPlayers} players
+                        </span>
+                        <span>·</span>
+                        <span>↓ {m.downloadCount.toLocaleString()}</span>
+                        <span>·</span>
+                        <RatingBadge
+                          ratingSum={m.ratingSum}
+                          ratingCount={m.ratingCount}
+                        />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-shrink-0 items-center gap-2 self-center">
+                  <div className="flex flex-shrink-0 items-center justify-end gap-2 sm:self-center">
                     <a
                       href={`/api/maps/${m.id}/download`}
                       title="Download map"
