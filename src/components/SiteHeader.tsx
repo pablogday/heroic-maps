@@ -10,7 +10,9 @@ export async function SiteHeader() {
   const user = session?.user;
 
   return (
-    <header className="border-b border-brass/40 bg-night-deep text-parchment">
+    // z-50 so the mobile drawer's backdrop doesn't dim the header — the
+    // merged menu button needs to stay tappable while the drawer is open.
+    <header className="relative z-50 border-b border-brass/40 bg-night-deep text-parchment">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <HeroicMark size={36} />
@@ -33,19 +35,23 @@ export async function SiteHeader() {
 
         <div className="flex items-center gap-2">
           {user ? (
+            // Desktop avatar dropdown (md+ only).
             <UserMenu name={user.name} image={user.image} />
           ) : (
-            <form action={signInDiscord}>
+            // Desktop sign-in button (md+ only). Mobile signed-out users
+            // sign in from inside the merged drawer instead.
+            <form action={signInDiscord} className="hidden md:block">
               <button
                 type="submit"
-                className="btn-brass rounded px-3 py-1.5 text-sm font-display sm:px-4"
+                className="btn-brass rounded px-4 py-1.5 text-sm font-display"
               >
-                <span className="sm:hidden">Sign in</span>
-                <span className="hidden sm:inline">Sign in with Discord</span>
+                Sign in with Discord
               </button>
             </form>
           )}
-          <MobileNav />
+          <MobileNav
+            user={user ? { name: user.name, image: user.image } : null}
+          />
         </div>
       </div>
     </header>
