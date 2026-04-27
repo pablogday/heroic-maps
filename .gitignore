@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Drizzle introspection scratch (one-off comparisons, not part of source)
 .scratch/
+
+# Local DB snapshots (real user data — must never be committed)
+backups/

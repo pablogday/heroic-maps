@@ -26,3 +26,27 @@ The baseline migration `drizzle/0000_baseline.sql` represents the schema
 as it existed when migration discipline was adopted. It's already
 recorded as applied in the prod `drizzle.__drizzle_migrations` table —
 do not delete it or its journal entry.
+
+## Backups & recovery
+
+Two layers of safety on the data:
+
+1. **Neon point-in-time restore.** Free tier keeps a 24-hour history.
+   To recover from a recent mistake, create a Neon branch from a
+   timestamp before the bad change, swap your env var to its connection
+   string to inspect, and either copy data back or promote the branch.
+
+2. **Local JSON snapshots.** Run `npm run db:snapshot` to dump every
+   user-data table (excludes auth tokens) to
+   `backups/<timestamp>/*.json`. Schema travels separately in
+   `drizzle/`. Together they're a full reproducible backup.
+
+   - Run **before** any potentially destructive operation (bulk
+     scripts, rebuilds, schema migrations on prod).
+   - Restore with `npm run db:restore -- backups/<timestamp>` against
+     a freshly-migrated empty DB. The restore script:
+     - Refuses to run if the target tables already have rows.
+     - Inserts inside a single transaction (atomic).
+     - Resets all sequences so new inserts don't collide.
+
+`backups/` is gitignored — snapshots stay local, never committed.
