@@ -156,7 +156,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
                       href={`/api/maps/${m.id}/download`}
                       title="Download map"
                       aria-label={`Download ${m.name}`}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded border border-brass/50 text-ink-soft hover:bg-brass/20 hover:text-ink transition-colors"
+                      className="hidden h-9 w-9 items-center justify-center rounded border border-brass/50 text-ink-soft hover:bg-brass/20 hover:text-ink transition-colors sm:inline-flex"
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
                         <path d="M8 1a.75.75 0 0 1 .75.75v6.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V1.75A.75.75 0 0 1 8 1Z" />

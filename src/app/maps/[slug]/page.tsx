@@ -12,6 +12,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StatIcon, type IconName } from "@/components/StatIcon";
 import { MapStats } from "@/components/MapStats";
+import { MapThumbnail } from "@/components/MapThumbnail";
 import { PageReveal } from "@/components/PageReveal";
 import { FactionCrest } from "@/components/FactionCrest";
 import { FACTION_LABEL, type Faction } from "@/lib/factions";
@@ -151,47 +152,60 @@ export default async function MapDetailPage({ params }: { params: Params }) {
         <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           <div>
             {m.previewKey ? (
-              <div
-                className={
-                  m.hasUnderground
-                    ? "grid gap-4 sm:grid-cols-2"
-                    : "grid gap-4"
-                }
-              >
-                <div className="card-brass overflow-hidden rounded">
-                  <div className="border-b border-brass/40 bg-night-deep px-4 py-2 text-xs uppercase tracking-wider text-parchment/80">
-                    Surface
-                  </div>
-                  <div className="relative aspect-square w-full bg-night-deep">
-                    <Image
-                      src={m.previewKey}
-                      alt={`${m.name} — surface map`}
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-contain pixelated"
-                      unoptimized
-                      priority
-                    />
-                  </div>
+              <>
+                {/* Mobile: single thumbnail with surface/underground toggle */}
+                <div className="card-brass overflow-hidden rounded sm:hidden">
+                  <MapThumbnail
+                    previewKey={m.previewKey}
+                    name={m.name}
+                    hasUnderground={m.hasUnderground}
+                    sizes="100vw"
+                    priority
+                    className="object-contain pixelated"
+                  />
                 </div>
-                {m.hasUnderground && (
+
+                {/* Tablet/desktop: side-by-side surface + underground */}
+                <div
+                  className={`hidden sm:grid sm:gap-4 ${
+                    m.hasUnderground ? "sm:grid-cols-2" : ""
+                  }`}
+                >
                   <div className="card-brass overflow-hidden rounded">
                     <div className="border-b border-brass/40 bg-night-deep px-4 py-2 text-xs uppercase tracking-wider text-parchment/80">
-                      Underground
+                      Surface
                     </div>
                     <div className="relative aspect-square w-full bg-night-deep">
                       <Image
-                        src={m.previewKey.replace("/img/", "/img_und/")}
-                        alt={`${m.name} — underground map`}
+                        src={m.previewKey}
+                        alt={`${m.name} — surface map`}
                         fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        sizes="(max-width: 1024px) 50vw, 33vw"
                         className="object-contain pixelated"
                         unoptimized
+                        priority
                       />
                     </div>
                   </div>
-                )}
-              </div>
+                  {m.hasUnderground && (
+                    <div className="card-brass overflow-hidden rounded">
+                      <div className="border-b border-brass/40 bg-night-deep px-4 py-2 text-xs uppercase tracking-wider text-parchment/80">
+                        Underground
+                      </div>
+                      <div className="relative aspect-square w-full bg-night-deep">
+                        <Image
+                          src={m.previewKey.replace("/img/", "/img_und/")}
+                          alt={`${m.name} — underground map`}
+                          fill
+                          sizes="(max-width: 1024px) 50vw, 33vw"
+                          className="object-contain pixelated"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="card-brass aspect-square flex items-center justify-center rounded text-ink-soft">
                 No preview
@@ -314,15 +328,22 @@ export default async function MapDetailPage({ params }: { params: Params }) {
 
           <aside className="space-y-4">
             <div className="card-brass rounded p-5">
+              {/* Desktop only: download CTA. HoMM3 is PC-only, so no point on mobile. */}
               <a
                 href={`/api/maps/${m.id}/download`}
-                className="btn-brass block rounded px-4 py-3 text-center text-sm font-display"
+                className="btn-brass hidden rounded px-4 py-3 text-center text-sm font-display sm:block"
               >
                 Download
               </a>
-              <p className="mt-2 text-center text-[11px] text-ink-soft">
+              <p className="mt-2 hidden text-center text-[11px] text-ink-soft sm:block">
                 Files served by maps4heroes.com for now — local hosting coming.
               </p>
+
+              {/* Mobile only: explain why there's no download button. */}
+              <div className="rounded border border-brass/40 bg-night-deep/30 p-3 text-center text-xs text-ink-soft sm:hidden">
+                <span className="mr-1" aria-hidden>🖥</span>
+                Visit on desktop to download. HoMM3 maps run on PC only.
+              </div>
 
               {viewerId ? (
                 <div className="mt-4">

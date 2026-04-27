@@ -68,7 +68,7 @@ export function MapCard({
             href={`/api/maps/${map.id}/download`}
             title="Download map"
             aria-label={`Download ${map.name}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded border border-brass/50 text-ink-soft transition-colors hover:bg-brass/20 hover:text-ink"
+            className="hidden h-9 w-9 items-center justify-center rounded border border-brass/50 text-ink-soft transition-colors hover:bg-brass/20 hover:text-ink sm:inline-flex"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
               <path d="M8 1a.75.75 0 0 1 .75.75v6.69l2.22-2.22a.75.75 0 1 1 1.06 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-3.5-3.5a.75.75 0 1 1 1.06-1.06l2.22 2.22V1.75A.75.75 0 0 1 8 1Z" />
