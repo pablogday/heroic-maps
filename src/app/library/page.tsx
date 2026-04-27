@@ -9,6 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { MapCard } from "@/components/MapCard";
 import type { MapCardData } from "@/lib/maps";
+import { stagger } from "@/lib/stagger";
 
 export const metadata = {
   title: "Library — Heroic Maps",
@@ -127,11 +128,12 @@ export default async function LibraryPage({
           </p>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <MapCard
                 key={r.id}
                 map={r as MapCardData}
                 signedIn={true}
+                {...stagger(i)}
                 badge={
                   tab === "played" && r.playedOutcome ? (
                     <span

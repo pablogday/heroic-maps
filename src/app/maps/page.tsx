@@ -21,6 +21,7 @@ import {
   type Version,
 } from "@/lib/maps";
 import { minDelay } from "@/lib/min-delay";
+import { stagger } from "@/lib/stagger";
 import { FACTIONS, type Faction } from "@/lib/factions";
 
 type SP = Promise<{
@@ -106,14 +107,23 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
           </p>
         ) : view === "grid" ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((m) => (
-              <MapCard key={m.id} map={m} signedIn={signedIn} />
+            {items.map((m, i) => (
+              <MapCard
+                key={m.id}
+                map={m}
+                signedIn={signedIn}
+                {...stagger(i)}
+              />
             ))}
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {items.map((m) => (
-              <li key={m.id}>
+            {items.map((m, i) => (
+              <li
+                key={m.id}
+                className="animate-card-rise"
+                style={stagger(i).style}
+              >
                 <div className="card-brass flex flex-col gap-3 rounded p-3 sm:flex-row sm:gap-4">
                   <div className="flex gap-3 sm:contents">
                     {m.previewKey ? (

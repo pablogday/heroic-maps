@@ -17,6 +17,8 @@ export function MapCard({
   badge,
   showDescription = true,
   imageSizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  className = "",
+  style,
 }: {
   map: MapCardData;
   signedIn: boolean;
@@ -24,9 +26,16 @@ export function MapCard({
   badge?: React.ReactNode;
   showDescription?: boolean;
   imageSizes?: string;
+  /** Extra classes appended to the root article (e.g. stagger animation). */
+  className?: string;
+  /** Inline style for things like animation-delay. */
+  style?: React.CSSProperties;
 }) {
   return (
-    <article className="card-brass flex flex-col overflow-hidden rounded">
+    <article
+      className={`card-brass flex flex-col overflow-hidden rounded ${className}`}
+      style={style}
+    >
       <MapThumbnail
         previewKey={map.previewKey}
         name={map.name}

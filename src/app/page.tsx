@@ -12,6 +12,7 @@ import {
   VERSIONS,
 } from "@/lib/maps";
 import { formatRelativeTime } from "@/lib/relative-time";
+import { stagger } from "@/lib/stagger";
 
 export default async function Home() {
   const session = await auth();
@@ -188,12 +189,13 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
-            {featured.map((m) => (
+            {featured.map((m, i) => (
               <MapCard
                 key={m.id}
                 map={m}
                 signedIn={signedIn}
                 imageSizes="(max-width: 768px) 100vw, 33vw"
+                {...stagger(i)}
               />
             ))}
           </div>

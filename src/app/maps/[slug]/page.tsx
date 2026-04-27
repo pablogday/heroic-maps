@@ -17,6 +17,7 @@ import { PageReveal } from "@/components/PageReveal";
 import { FactionCrest } from "@/components/FactionCrest";
 import { FACTION_LABEL, type Faction } from "@/lib/factions";
 import { minDelay } from "@/lib/min-delay";
+import { stagger } from "@/lib/stagger";
 import { userMaps } from "@/db/schema";
 import { ReviewForm } from "./ReviewForm";
 import { MapActions } from "./MapActions";
@@ -470,8 +471,8 @@ export default async function MapDetailPage({ params }: { params: Params }) {
               </span>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {similar.map((s) => (
-                <MapCard key={s.id} map={s} signedIn={signedIn} />
+              {similar.map((s, i) => (
+                <MapCard key={s.id} map={s} signedIn={signedIn} {...stagger(i)} />
               ))}
             </div>
           </section>
