@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Drizzle introspection scratch (one-off comparisons, not part of source)
+.scratch/

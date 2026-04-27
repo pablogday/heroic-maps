@@ -164,6 +164,8 @@ export const maps = pgTable(
     index("maps_players_idx").on(t.totalPlayers),
     index("maps_downloads_idx").on(t.downloadCount),
     index("maps_published_idx").on(t.publishedAt),
+    // GIN index for fast `factions @> ARRAY[...]` containment queries.
+    index("maps_factions_idx").using("gin", t.factions),
   ]
 );
 
