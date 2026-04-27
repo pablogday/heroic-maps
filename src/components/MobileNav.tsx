@@ -2,17 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { signInDiscord, signOutAction } from "@/app/actions/auth";
+import { useEffect, useState, useTransition } from "react";
+import { signIn, signOut } from "next-auth/react";
+import { toast } from "@/lib/toast";
 import { PUBLIC_LINKS, USER_LINKS, type NavLink } from "./nav-data";
 import { IconHamburger, IconSignOut } from "./nav-icons";
 
 /**
- * Mobile-only merged menu. Single bordered button in the header — when
- * signed in, shows the avatar plus a hamburger glyph (one touch target);
- * when signed out, just the hamburger. Tapping opens a full-width drawer
- * sliding down from below the header with all nav links plus auth
- * actions, using the same icon set as the desktop dropdown.
+ * Mobile-only merged menu. Single bordered button — when signed in shows
+ * avatar + hamburger glyph (one touch target); when signed out, a pill
+ * with hamburger + "Menu" label. Tapping opens a full-width drawer
+ * sliding down from below the header.
  */
 export function MobileNav({
   user,
@@ -20,8 +20,9 @@ export function MobileNav({
   user: { name: string | null | undefined; image: string | null | undefined } | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  // Lock body scroll while the drawer is open and close on Escape.
+  // Lock body scroll while open + close on Escape.
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -37,6 +38,20 @@ export function MobileNav({
   }, [open]);
 
   const close = () => setOpen(false);
+
+  const onSignOut = () => {
+    setOpen(false);
+    toast.info("Signing out…");
+    startTransition(() => {
+      signOut({ callbackUrl: "/" });
+    });
+  };
+
+  const onSignIn = () => {
+    setOpen(false);
+    toast.info("Redirecting to Discord…");
+    signIn("discord");
+  };
 
   return (
     <>
@@ -56,78 +71,85 @@ export function MobileNav({
             className="h-[26px] w-[26px] rounded-full"
             unoptimized
           />
-        ) : null}
+        ) : (
+          // Signed-out: small "MENU" label so the button doesn't feel
+          // dwarfed compared to the avatar variant.
+          <span className="px-1 font-display text-[11px] uppercase tracking-[0.2em] text-parchment/85">
+            Menu
+          </span>
+        )}
         <span className="text-parchment/90">
           <IconHamburger />
         </span>
       </button>
 
-      {/* Backdrop covers the page below the header so the header stays
-          tappable (the merged button doubles as the drawer close). */}
+      {/* Backdrop — only below the header so the menu button stays bright. */}
       <div
         onClick={close}
-        className={`fixed inset-x-0 bottom-0 top-[64px] z-40 bg-night-deep/60 backdrop-blur-sm transition-opacity md:hidden ${
+        className={`fixed inset-x-0 bottom-0 top-[64px] z-30 bg-night-deep/60 backdrop-blur-sm transition-opacity md:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden
       />
 
-      {/* Drawer — anchored at top:0, slid down to header height when open */}
+      {/* Clip container starts at the header bottom and hides anything
+          translating above. The inner drawer can slide freely without
+          ever flashing over the header during the transition. */}
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Site navigation"
         aria-hidden={!open}
-        className={`fixed inset-x-0 top-0 z-50 border-b border-brass/40 bg-parchment shadow-xl transition-transform duration-300 ease-out md:hidden ${
-          open
-            ? "translate-y-[64px]"
-            : "pointer-events-none -translate-y-full"
-        }`}
+        className="pointer-events-none fixed inset-x-0 bottom-0 top-[64px] z-40 overflow-hidden md:hidden"
       >
-        <nav className="mx-auto max-w-6xl px-4 py-3">
-          <ul className="flex flex-col">
-            {PUBLIC_LINKS.map((link) => (
-              <DrawerItem key={link.href} link={link} onClick={close} />
-            ))}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Site navigation"
+          className={`pointer-events-auto border-b border-brass/40 bg-parchment shadow-xl transition-transform duration-300 ease-out ${
+            open ? "translate-y-0" : "-translate-y-full"
+          }`}
+        >
+          <nav className="mx-auto max-w-6xl px-4 py-3">
+            <ul className="flex flex-col">
+              {PUBLIC_LINKS.map((link) => (
+                <DrawerItem key={link.href} link={link} onClick={close} />
+              ))}
 
-            {user ? (
-              <>
-                <Separator />
-                {USER_LINKS.map((link) => (
-                  <DrawerItem key={link.href} link={link} onClick={close} />
-                ))}
-                <li>
-                  <form action={signOutAction}>
+              {user ? (
+                <>
+                  <Separator />
+                  {USER_LINKS.map((link) => (
+                    <DrawerItem key={link.href} link={link} onClick={close} />
+                  ))}
+                  <li>
                     <button
-                      type="submit"
-                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-base font-display text-blood hover:bg-blood/10"
+                      type="button"
+                      onClick={onSignOut}
+                      disabled={pending}
+                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-base font-display text-blood hover:bg-blood/10 disabled:opacity-60"
                     >
                       <span>
                         <IconSignOut />
                       </span>
-                      Sign out
+                      {pending ? "Signing out…" : "Sign out"}
                     </button>
-                  </form>
-                </li>
-              </>
-            ) : (
-              <>
-                <Separator />
-                <li>
-                  <form action={signInDiscord}>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <Separator />
+                  <li>
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={onSignIn}
                       className="btn-brass mt-1 w-full rounded px-4 py-2.5 text-sm font-display"
-                      onClick={close}
                     >
                       Sign in with Discord
                     </button>
-                  </form>
-                </li>
-              </>
-            )}
-          </ul>
-        </nav>
+                  </li>
+                </>
+              )}
+            </ul>
+          </nav>
+        </div>
       </div>
     </>
   );

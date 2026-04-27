@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { signOutAction } from "@/app/actions/auth";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { signOut } from "next-auth/react";
+import { toast } from "@/lib/toast";
 import { USER_LINKS } from "./nav-data";
 import { IconSignOut } from "./nav-icons";
 
@@ -21,7 +22,16 @@ export function UserMenu({
   image: string | null | undefined;
 }) {
   const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
+
+  const onSignOut = () => {
+    setOpen(false);
+    toast.info("Signing out…");
+    startTransition(() => {
+      signOut({ callbackUrl: "/" });
+    });
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -101,18 +111,18 @@ export function UserMenu({
             </Link>
           ))}
           <div className="my-1 h-px bg-brass/30" />
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 rounded px-3 py-2 text-left text-sm text-blood hover:bg-blood/10"
-            >
-              <span>
-                <IconSignOut />
-              </span>
-              Sign out
-            </button>
-          </form>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={onSignOut}
+            disabled={pending}
+            className="flex w-full items-center gap-2.5 rounded px-3 py-2 text-left text-sm text-blood hover:bg-blood/10 disabled:opacity-60"
+          >
+            <span>
+              <IconSignOut />
+            </span>
+            {pending ? "Signing out…" : "Sign out"}
+          </button>
         </div>
       )}
     </div>
