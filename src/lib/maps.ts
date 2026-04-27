@@ -3,7 +3,7 @@ import { and, desc, eq, gte, ilike, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { maps, reviews, userMaps, users } from "@/db/schema";
 import type { Faction } from "./factions";
-import type { Size, Sort, Version } from "./map-constants";
+import type { Difficulty, Size, Sort, Version } from "./map-constants";
 
 export * from "./map-constants";
 
@@ -13,6 +13,7 @@ export type MapFilters = {
   size?: Size;
   players?: number;
   faction?: Faction;
+  difficulty?: Difficulty;
   sort?: Sort;
   page?: number;
 };
@@ -83,6 +84,9 @@ export async function listMaps(f: MapFilters, viewerId: string | null = null) {
   }
   if (f.faction) {
     where.push(sql`${maps.factions} @> ARRAY[${f.faction}]::text[]`);
+  }
+  if (f.difficulty) {
+    where.push(eq(maps.difficulty, f.difficulty));
   }
 
   const orderBy = (() => {

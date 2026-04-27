@@ -9,11 +9,13 @@ import { MapCard } from "@/components/MapCard";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { Filters } from "./Filters";
 import {
+  DIFFICULTIES,
   listMaps,
   SIZE_LABEL,
   SIZES,
   SORT_OPTIONS,
   VERSIONS,
+  type Difficulty,
   type Size,
   type Sort,
   type Version,
@@ -27,6 +29,7 @@ type SP = Promise<{
   size?: string;
   players?: string;
   faction?: string;
+  difficulty?: string;
   sort?: string;
   page?: string;
   view?: string;
@@ -38,6 +41,8 @@ const isSize = (v?: string): v is Size =>
   !!v && (SIZES as readonly string[]).includes(v);
 const isFaction = (v?: string): v is Faction =>
   !!v && (FACTIONS as readonly string[]).includes(v);
+const isDifficulty = (v?: string): v is Difficulty =>
+  !!v && (DIFFICULTIES as readonly string[]).includes(v);
 const isSort = (v?: string): v is Sort =>
   !!v && SORT_OPTIONS.some((o) => o.value === v);
 
@@ -49,6 +54,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
     size: isSize(sp.size) ? sp.size : undefined,
     players: sp.players ? Number(sp.players) || undefined : undefined,
     faction: isFaction(sp.faction) ? sp.faction : undefined,
+    difficulty: isDifficulty(sp.difficulty) ? sp.difficulty : undefined,
     sort: isSort(sp.sort) ? sp.sort : ("downloads" as const),
     page: sp.page ? Number(sp.page) || 1 : 1,
   };
@@ -72,6 +78,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
     if (next.size) params.set("size", next.size);
     if (next.players) params.set("players", String(next.players));
     if (next.faction) params.set("faction", next.faction);
+    if (next.difficulty) params.set("difficulty", next.difficulty);
     if (next.sort && next.sort !== "downloads")
       params.set("sort", next.sort);
     if (next.page && next.page !== 1) params.set("page", String(next.page));

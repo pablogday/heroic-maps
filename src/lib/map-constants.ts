@@ -23,6 +23,23 @@ export const SIZE_LABEL: Record<Size, string> = {
   G: "Giant",
 };
 
+export const DIFFICULTIES = [
+  "easy",
+  "normal",
+  "hard",
+  "expert",
+  "impossible",
+] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
+  easy: "Easy",
+  normal: "Normal",
+  hard: "Hard",
+  expert: "Expert",
+  impossible: "Impossible",
+};
+
 export const SORT_OPTIONS = [
   { value: "downloads", label: "Most downloaded" },
   { value: "rating", label: "Top rated" },

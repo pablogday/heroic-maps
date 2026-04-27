@@ -55,13 +55,11 @@ export function MapThumbnail({
             setShowUnder((v) => !v);
           }}
           aria-pressed={showUnder}
-          title={
-            showUnder ? "Show surface" : "Show underground"
-          }
-          className="absolute right-2 top-2 inline-flex items-center gap-1 rounded border border-brass/70 bg-night-deep/80 px-2 py-1 text-[10px] font-display uppercase tracking-wider text-parchment shadow-md backdrop-blur-sm transition-colors hover:bg-night-deep"
+          title={showUnder ? "Show surface" : "Show underground"}
+          className="absolute right-2 top-2 inline-flex w-[112px] items-center justify-center gap-2 rounded border border-brass/70 bg-night-deep/85 px-2.5 py-1.5 text-xs font-display uppercase tracking-wider text-parchment shadow-md backdrop-blur-sm transition-colors hover:bg-night-deep"
         >
-          {/* tiny switch glyph */}
-          <svg width="14" height="10" viewBox="0 0 28 16" aria-hidden>
+          {/* switch glyph */}
+          <svg width="22" height="14" viewBox="0 0 28 16" aria-hidden>
             <rect
               x="1"
               y="1"
@@ -75,13 +73,15 @@ export function MapThumbnail({
             <circle
               cx={showUnder ? 21 : 7}
               cy="8"
-              r="4"
+              r="4.5"
               fill="#e0b656"
               stroke="#231509"
               strokeWidth="0.8"
             />
           </svg>
-          <span>{showUnder ? "Under" : "Surface"}</span>
+          <span className="w-12 text-left">
+            {showUnder ? "Under" : "Surface"}
+          </span>
         </button>
       )}
     </div>

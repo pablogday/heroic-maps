@@ -109,18 +109,18 @@ function DifficultyTile({ difficulty }: { difficulty: string | null }) {
     : "text-ink";
   return (
     <Tile icon="difficulty" label="Difficulty">
-      <div className={`flex items-center justify-between gap-2 ${color}`}>
-        <span>{label}</span>
-        <span aria-hidden className="flex gap-0.5">
+      <div className={color}>
+        <div className="leading-none">{label}</div>
+        <div aria-hidden className="mt-2 flex gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <span
               key={i}
-              className={`inline-block h-2 w-2 rotate-45 ${
+              className={`inline-block h-1.5 w-1.5 rotate-45 ${
                 i < level ? "bg-current" : "bg-current/15"
               }`}
             />
           ))}
-        </span>
+        </div>
       </div>
     </Tile>
   );

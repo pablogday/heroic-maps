@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { SIZES, SIZE_LABEL, SORT_OPTIONS, VERSIONS } from "@/lib/map-constants";
+import {
+  DIFFICULTIES,
+  DIFFICULTY_LABEL,
+  SIZES,
+  SIZE_LABEL,
+  SORT_OPTIONS,
+  VERSIONS,
+} from "@/lib/map-constants";
 import { FACTIONS, FACTION_LABEL, type Faction } from "@/lib/factions";
 import { FactionCrest } from "@/components/FactionCrest";
 
@@ -51,10 +58,8 @@ export function Filters() {
   }, [sp]);
 
   return (
-    <div
-      className="card-brass mb-6 grid gap-3 rounded p-4 md:grid-cols-[1fr_auto_auto_auto_auto] items-center"
-    >
-      <div className="relative">
+    <div className="card-brass mb-6 flex flex-wrap items-center gap-3 rounded p-4">
+      <div className="relative min-w-[200px] flex-1">
         <input
           type="search"
           value={q}
@@ -100,6 +105,20 @@ export function Filters() {
       </select>
 
       <select
+        value={sp.get("difficulty") ?? ""}
+        onChange={(e) => apply({ difficulty: e.target.value })}
+        className="rounded border border-brass/50 bg-parchment px-3 py-2 text-sm text-ink"
+        aria-label="Filter by difficulty"
+      >
+        <option value="">All difficulties</option>
+        {DIFFICULTIES.map((d) => (
+          <option key={d} value={d}>
+            {DIFFICULTY_LABEL[d]}
+          </option>
+        ))}
+      </select>
+
+      <select
         value={sp.get("sort") ?? "downloads"}
         onChange={(e) =>
           apply({ sort: e.target.value === "downloads" ? "" : e.target.value })
@@ -135,7 +154,7 @@ function FactionStrip({
   apply: (next: Record<string, string>) => void;
 }) {
   return (
-    <div className="md:col-span-5 flex flex-wrap items-center gap-1.5 border-t border-brass/30 pt-3">
+    <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-brass/30 pt-3">
       <span className="mr-1 text-xs uppercase tracking-wider text-ink-soft">
         Faction
       </span>
