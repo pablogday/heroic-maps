@@ -83,11 +83,16 @@ export function MobileNav({
         </span>
       </button>
 
-      {/* Backdrop — only below the header so the menu button stays bright. */}
+      {/* Backdrop — only below the header so the menu button stays bright.
+          backdrop-blur applied conditionally; iOS Safari sometimes renders
+          the blur even at opacity:0, which produced a faint haze under the
+          header when the menu was closed. */}
       <div
         onClick={close}
-        className={`fixed inset-x-0 bottom-0 top-[64px] z-30 bg-night-deep/60 backdrop-blur-sm transition-opacity md:hidden ${
-          open ? "opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-x-0 bottom-0 top-[64px] z-30 bg-night-deep/60 transition-opacity md:hidden ${
+          open
+            ? "opacity-100 backdrop-blur-sm"
+            : "pointer-events-none opacity-0"
         }`}
         aria-hidden
       />
@@ -103,8 +108,10 @@ export function MobileNav({
           role="dialog"
           aria-modal="true"
           aria-label="Site navigation"
-          className={`pointer-events-auto border-b border-brass/40 bg-parchment shadow-xl transition-transform duration-300 ease-out ${
-            open ? "translate-y-0" : "-translate-y-full"
+          className={`pointer-events-auto border-b border-brass/40 bg-parchment transition-transform duration-300 ease-out ${
+            open
+              ? "translate-y-0 shadow-xl"
+              : "-translate-y-full"
           }`}
         >
           <nav className="mx-auto max-w-6xl px-4 py-3">
