@@ -60,18 +60,16 @@ export default function RootLayout({
       lang="en"
       className={`${cinzel.variable} ${inter.variable} h-full antialiased`}
     >
-      <head>
+      <body className="min-h-full flex flex-col relative">
         {/* Runs before paint: hides the boot splash if the user already
-            saw it this session. Keeps splash to once-per-session without
-            a flash on subsequent navigations. */}
+            saw it this session. Inlined here (rather than in <head>) to
+            avoid layout-time hydration quirks in App Router. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
               "try{if(sessionStorage.getItem('hm-splashed')==='1')document.documentElement.classList.add('hm-splash-seen')}catch(e){}",
           }}
         />
-      </head>
-      <body className="min-h-full flex flex-col relative">
         <BootSplash />
         {children}
       </body>

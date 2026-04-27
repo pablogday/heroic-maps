@@ -96,14 +96,17 @@ export function MobileNav() {
         aria-hidden
       />
 
-      {/* Drawer */}
+      {/* Drawer — anchored to top:0, slid down to header height when open */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
-        className={`fixed inset-x-0 top-[64px] z-50 border-b border-brass/40 bg-parchment shadow-xl transition-transform duration-300 ease-out md:hidden ${
-          open ? "translate-y-0" : "-translate-y-[120%]"
+        className={`fixed inset-x-0 top-0 z-50 border-b border-brass/40 bg-parchment shadow-xl transition-transform duration-300 ease-out md:hidden ${
+          open
+            ? "translate-y-[64px]"
+            : "pointer-events-none -translate-y-full"
         }`}
+        aria-hidden={!open}
       >
         <nav className="mx-auto max-w-6xl px-4 py-3">
           <ul className="flex flex-col">
