@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HeroicMark } from "./HeroicMark";
 import { UserMenu } from "./UserMenu";
+import { MobileNav } from "./MobileNav";
 import { auth } from "@/auth";
 import { signInDiscord } from "@/app/actions/auth";
 
@@ -30,18 +31,22 @@ export async function SiteHeader() {
           </Link>
         </nav>
 
-        {user ? (
-          <UserMenu name={user.name} image={user.image} />
-        ) : (
-          <form action={signInDiscord}>
-            <button
-              type="submit"
-              className="btn-brass rounded px-4 py-1.5 text-sm font-display"
-            >
-              Sign in with Discord
-            </button>
-          </form>
-        )}
+        <div className="flex items-center gap-2">
+          <MobileNav />
+          {user ? (
+            <UserMenu name={user.name} image={user.image} />
+          ) : (
+            <form action={signInDiscord}>
+              <button
+                type="submit"
+                className="btn-brass rounded px-3 py-1.5 text-sm font-display sm:px-4"
+              >
+                <span className="sm:hidden">Sign in</span>
+                <span className="hidden sm:inline">Sign in with Discord</span>
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </header>
   );
