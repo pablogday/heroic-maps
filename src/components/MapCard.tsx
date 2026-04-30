@@ -3,7 +3,7 @@ import { RatingBadge } from "./RatingBadge";
 import { FactionCrest } from "./FactionCrest";
 import { MapThumbnail } from "./MapThumbnail";
 import { BookmarkButton } from "./BookmarkButton";
-import { SIZE_LABEL, type Size } from "@/lib/map-constants";
+import { SIZE_LABEL, versionLabel, type Size } from "@/lib/map-constants";
 import type { Faction } from "@/lib/factions";
 import type { MapCardData } from "@/lib/maps";
 
@@ -43,8 +43,10 @@ export function MapCard({
         sizes={imageSizes}
       />
       <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-wider text-ink-soft">
-          <span>{map.version}</span>
+        <div className="mb-2 flex items-center justify-between gap-2 text-xs text-ink-soft">
+          <span className="truncate" title={map.version}>
+            {versionLabel(map.version)}
+          </span>
           <RatingBadge
             ratingSum={map.ratingSum}
             ratingCount={map.ratingCount}

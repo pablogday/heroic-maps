@@ -47,6 +47,31 @@ export const playedOutcomeEnum = pgEnum("played_outcome", [
   "abandoned",
 ]);
 
+/**
+ * Lookup tables for the canonical full names of each enum'd "type".
+ * Acts as the source of truth for display labels — both server-side
+ * rendering and (eventually) the public API consume these. The TS
+ * mirrors in `lib/map-constants.ts` are kept aligned for client code
+ * that needs labels without an async DB call.
+ */
+export const mapVersionsTable = pgTable("map_versions", {
+  code: mapVersionEnum("code").primaryKey(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull(),
+});
+
+export const mapSizesTable = pgTable("map_sizes", {
+  code: mapSizeEnum("code").primaryKey(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull(),
+});
+
+export const difficultyLevelsTable = pgTable("difficulty_levels", {
+  code: difficultyEnum("code").primaryKey(),
+  name: text("name").notNull(),
+  sortOrder: integer("sort_order").notNull(),
+});
+
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   discordId: varchar("discord_id", { length: 64 }).unique(),

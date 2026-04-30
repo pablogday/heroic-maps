@@ -8,6 +8,7 @@ import {
   SIZES,
   SIZE_LABEL,
   SORT_OPTIONS,
+  VERSION_LABEL,
   VERSIONS,
 } from "@/lib/map-constants";
 import { FACTIONS, FACTION_LABEL, type Faction } from "@/lib/factions";
@@ -85,7 +86,7 @@ export function Filters() {
         <option value="">All versions</option>
         {VERSIONS.map((v) => (
           <option key={v} value={v}>
-            {v}
+            {VERSION_LABEL[v]}
           </option>
         ))}
       </select>

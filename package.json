@@ -12,11 +12,14 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:snapshot": "tsx scripts/snapshot-data.ts",
-    "db:restore": "tsx scripts/restore-data.ts"
+    "db:restore": "tsx scripts/restore-data.ts",
+    "check:meta": "tsx scripts/check-meta-sync.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
     "@auth/drizzle-adapter": "^1.11.2",
+    "@aws-sdk/client-s3": "^3.1038.0",
+    "@aws-sdk/s3-request-presigner": "^3.1038.0",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

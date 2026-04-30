@@ -20,6 +20,7 @@ import {
   type Sort,
   type Version,
 } from "@/lib/maps";
+import { versionLabel } from "@/lib/map-constants";
 import { minDelay } from "@/lib/min-delay";
 import { stagger } from "@/lib/stagger";
 import { FACTIONS, type Faction } from "@/lib/factions";
@@ -145,8 +146,11 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
                         <h3 className="font-display text-base text-ink truncate">
                           {m.name}
                         </h3>
-                        <span className="text-xs uppercase tracking-wider text-ink-soft flex-shrink-0">
-                          {m.version}
+                        <span
+                          className="text-xs text-ink-soft flex-shrink-0"
+                          title={m.version}
+                        >
+                          {versionLabel(m.version)}
                         </span>
                       </div>
                       <p className="mt-1 line-clamp-1 text-sm text-ink-soft">

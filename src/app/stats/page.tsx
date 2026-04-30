@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { FactionCrest } from "@/components/FactionCrest";
-import { SIZES, SIZE_LABEL, VERSIONS } from "@/lib/map-constants";
+import { SIZES, SIZE_LABEL, VERSION_LABEL, VERSIONS } from "@/lib/map-constants";
 import { FACTIONS, FACTION_LABEL, type Faction } from "@/lib/factions";
 
 export const metadata = {
@@ -127,9 +127,10 @@ export default async function StatsPage() {
                 <li key={v} className="flex items-center gap-3 text-sm">
                   <Link
                     href={`/maps?version=${v}`}
-                    className="w-28 shrink-0 text-ink hover:text-blood"
+                    title={v}
+                    className="w-44 shrink-0 truncate text-ink hover:text-blood"
                   >
-                    {v}
+                    {VERSION_LABEL[v]}
                   </Link>
                   <div className="relative h-5 flex-1 overflow-hidden rounded bg-night-deep/15">
                     <div

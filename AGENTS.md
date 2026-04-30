@@ -50,3 +50,26 @@ Two layers of safety on the data:
      - Resets all sequences so new inserts don't collide.
 
 `backups/` is gitignored — snapshots stay local, never committed.
+
+## Lookup tables (versions, sizes, difficulties)
+
+Three lookup tables hold the canonical full-name labels for the enum'd
+"types": `map_versions`, `map_sizes`, `difficulty_levels`. Each row is
+`(code, name, sort_order)` where `code` matches the existing pg enum
+value and `name` is the human label.
+
+The DB is the source of truth. A TS mirror in `lib/map-constants.ts`
+exists for client components that can't await an async DB call during
+render.
+
+**When adding or changing a label:**
+
+1. Edit `lib/map-constants.ts` (the TS mirror).
+2. Write a Drizzle migration that updates the corresponding lookup
+   table — typically a tiny `UPDATE map_versions SET name = ...` or
+   `INSERT`.
+3. Run `npm run check:meta` to confirm DB and TS agree before
+   committing.
+
+The check script exits non-zero on drift; wire it into pre-commit / CI
+when you're ready to.

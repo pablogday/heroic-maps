@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { maps } from "@/db/schema";
+import { versionLabel } from "@/lib/map-constants";
 
 export const runtime = "nodejs";
 export const alt = "Map preview — Heroic Maps";
@@ -82,7 +83,7 @@ export default async function Image({ params }: { params: Params }) {
               display: "flex",
             }}
           >
-            {m.version} · Heroic Maps
+            {versionLabel(m.version)} · Heroic Maps
           </div>
           <div
             style={{

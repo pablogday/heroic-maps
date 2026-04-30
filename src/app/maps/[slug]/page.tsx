@@ -5,6 +5,7 @@ import { and, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { maps, reviews, users } from "@/db/schema";
 import { getSimilarMaps } from "@/lib/maps";
+import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
 import { auth } from "@/auth";
 import { signInDiscord } from "@/app/actions/auth";
@@ -24,17 +25,6 @@ import { MapActions } from "./MapActions";
 import type { PlayedOutcome } from "@/app/actions/library";
 
 type Params = Promise<{ slug: string }>;
-
-const VERSION_LABEL: Record<string, string> = {
-  RoE: "Restoration of Erathia",
-  AB: "Armageddon's Blade",
-  SoD: "The Shadow of Death",
-  HotA: "Horn of the Abyss",
-  WoG: "In the Wake of Gods",
-  Chronicles: "Chronicles",
-  HD: "HD Edition",
-  Other: "Other",
-};
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { slug } = await params;
@@ -146,7 +136,7 @@ export default async function MapDetailPage({ params }: { params: Params }) {
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="font-display text-4xl text-ink">{m.name}</h1>
           <span className="text-sm text-ink-soft">
-            {VERSION_LABEL[m.version] ?? m.version}
+            {versionLabel(m.version)}
           </span>
         </div>
 

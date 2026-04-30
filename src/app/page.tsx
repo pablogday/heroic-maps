@@ -11,6 +11,7 @@ import {
   getRecentlyReviewed,
   VERSIONS,
 } from "@/lib/maps";
+import { VERSION_LABEL, versionLabel } from "@/lib/map-constants";
 import { formatRelativeTime } from "@/lib/relative-time";
 import { stagger } from "@/lib/stagger";
 
@@ -64,9 +65,10 @@ export default async function Home() {
               <Link
                 key={v}
                 href={`/maps?version=${v}`}
+                title={v}
                 className="rounded border border-brass/50 bg-parchment-dark/30 px-3 py-1 text-sm text-ink hover:bg-brass/20"
               >
-                {v}
+                {VERSION_LABEL[v]}
               </Link>
             ))}
           </div>
@@ -112,7 +114,8 @@ export default async function Home() {
                           {m.name}
                         </div>
                         <div className="text-xs text-ink-soft">
-                          {m.version} · {formatRelativeTime(m.addedAt)}
+                          {versionLabel(m.version)} ·{" "}
+                          {formatRelativeTime(m.addedAt)}
                         </div>
                       </div>
                     </Link>

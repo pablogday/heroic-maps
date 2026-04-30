@@ -8,6 +8,13 @@
       "when": 1777324148512,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777588920168,
+      "tag": "0001_add_meta_lookup_tables",
+      "breakpoints": true
     }
   ]
 }
