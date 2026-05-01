@@ -186,6 +186,10 @@ export const maps = pgTable(
     fileKey: text("file_key").notNull(),
     fileSize: integer("file_size"),
     previewKey: text("preview_key"),
+    // Underground preview, stored separately because R2 keys don't share
+    // the maps4heroes "/img/" → "/img_und/" pattern. Null when the map
+    // has no underground level OR when not yet migrated.
+    undergroundPreviewKey: text("underground_preview_key"),
     minimapKey: text("minimap_key"),
 
     uploaderId: text("uploader_id").references(() => users.id, {

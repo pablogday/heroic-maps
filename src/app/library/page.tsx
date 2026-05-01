@@ -72,6 +72,7 @@ export default async function LibraryPage({
       ratingSum: maps.ratingSum,
       ratingCount: maps.ratingCount,
       previewKey: maps.previewKey,
+      undergroundPreviewKey: maps.undergroundPreviewKey,
       hasUnderground: maps.hasUnderground,
       factions: maps.factions,
       downloadCount: maps.downloadCount,

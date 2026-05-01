@@ -148,6 +148,7 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                 <div className="card-brass overflow-hidden rounded sm:hidden">
                   <MapThumbnail
                     previewKey={m.previewKey}
+                    undergroundPreviewKey={m.undergroundPreviewKey}
                     name={m.name}
                     hasUnderground={m.hasUnderground}
                     sizes="100vw"
@@ -185,7 +186,10 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                       </div>
                       <div className="relative aspect-square w-full bg-night-deep">
                         <Image
-                          src={m.previewKey.replace("/img/", "/img_und/")}
+                          src={
+                            m.undergroundPreviewKey ??
+                            m.previewKey.replace("/img/", "/img_und/")
+                          }
                           alt={`${m.name} — underground map`}
                           fill
                           sizes="(max-width: 1024px) 50vw, 33vw"

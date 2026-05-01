@@ -32,6 +32,21 @@ export async function GET(
 
   if (!m) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Best-effort download counter — bump regardless of which path we take.
+  const bumpCounter = db
+    .update(maps)
+    .set({ downloadCount: sql`${maps.downloadCount} + 1` })
+    .where(eq(maps.id, numericId));
+
+  // Migrated maps: file_key is the R2 public URL itself. Redirect there
+  // and let Cloudflare serve the bytes — no upstream call needed.
+  if (m.fileKey.startsWith("http")) {
+    await bumpCounter;
+    return NextResponse.redirect(m.fileKey, 302);
+  }
+
+  // Legacy path: file_key is "source:NNNN", file still lives on
+  // maps4heroes. Resolve via their rating page.
   const sourceId = sourceIdFromKey(m.fileKey);
   if (!sourceId) {
     return NextResponse.json(
@@ -60,11 +75,6 @@ export async function GET(
     );
   }
 
-  // Increment download counter (best-effort).
-  await db
-    .update(maps)
-    .set({ downloadCount: sql`${maps.downloadCount} + 1` })
-    .where(eq(maps.id, numericId));
-
+  await bumpCounter;
   return NextResponse.redirect(match[1], 302);
 }

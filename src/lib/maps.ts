@@ -37,6 +37,7 @@ const cardCols = {
   ratingSum: maps.ratingSum,
   ratingCount: maps.ratingCount,
   previewKey: maps.previewKey,
+  undergroundPreviewKey: maps.undergroundPreviewKey,
   hasUnderground: maps.hasUnderground,
   factions: maps.factions,
   downloadCount: maps.downloadCount,
@@ -54,6 +55,7 @@ export type MapCardData = {
   ratingSum: number;
   ratingCount: number;
   previewKey: string | null;
+  undergroundPreviewKey: string | null;
   hasUnderground: boolean;
   factions: string[] | null;
   downloadCount: number;

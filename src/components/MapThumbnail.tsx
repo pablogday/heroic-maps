@@ -11,6 +11,7 @@ import { useState } from "react";
  */
 export function MapThumbnail({
   previewKey,
+  undergroundPreviewKey,
   name,
   hasUnderground,
   sizes,
@@ -18,6 +19,10 @@ export function MapThumbnail({
   className = "object-cover pixelated",
 }: {
   previewKey: string | null;
+  /** Explicit R2 URL for the underground variant. Preferred when set;
+   *  falls back to the legacy maps4heroes URL-rewrite trick for maps
+   *  not yet migrated to R2. */
+  undergroundPreviewKey?: string | null;
   name: string;
   hasUnderground: boolean;
   sizes?: string;
@@ -32,10 +37,10 @@ export function MapThumbnail({
     return <div className="aspect-square w-full bg-night-deep" />;
   }
 
+  const undergroundSrc =
+    undergroundPreviewKey ?? previewKey.replace("/img/", "/img_und/");
   const src =
-    showUnder && hasUnderground
-      ? previewKey.replace("/img/", "/img_und/")
-      : previewKey;
+    showUnder && hasUnderground ? undergroundSrc : previewKey;
 
   return (
     <div className="relative aspect-square w-full overflow-hidden bg-night-deep">

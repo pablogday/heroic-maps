@@ -1,0 +1,1 @@
+ALTER TABLE "maps" ADD COLUMN "underground_preview_key" text;

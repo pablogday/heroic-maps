@@ -38,6 +38,7 @@ export function MapCard({
     >
       <MapThumbnail
         previewKey={map.previewKey}
+        undergroundPreviewKey={map.undergroundPreviewKey}
         name={map.name}
         hasUnderground={map.hasUnderground}
         sizes={imageSizes}
