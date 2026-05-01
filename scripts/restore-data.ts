@@ -20,7 +20,7 @@
  * snapshot — users will need to sign in again.
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 import fs from "node:fs";

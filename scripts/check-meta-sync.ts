@@ -10,7 +10,7 @@
  *   npm run check:meta
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 import {

@@ -12,7 +12,9 @@
  */
 
 import { config } from "dotenv";
-config({ path: ".env.local" });
+// override: true so .env.local wins over anything pre-set in the shell
+// (some shell rc files / Claude Code envs export blank ANTHROPIC_API_KEY).
+config({ path: ".env.local", override: true });
 
 import Anthropic from "@anthropic-ai/sdk";
 import postgres from "postgres";

@@ -28,7 +28,7 @@
  *   --concurrency=N              parallel maps (default 4, max 8)
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 import pLimit from "p-limit";

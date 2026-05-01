@@ -13,7 +13,7 @@
  *   --force  overwrite existing factions arrays (default: only fill nulls)
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 import { inferFactionsFromText } from "../src/lib/factions";

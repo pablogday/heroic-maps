@@ -19,7 +19,7 @@
  * Run twice: once with --dry to eyeball clusters, then for real.
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 

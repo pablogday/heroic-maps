@@ -5,7 +5,7 @@
  * is wired up before running real migration scripts.
  */
 import { config } from "dotenv";
-config({ path: ".env.local" });
+config({ path: ".env.local", override: true });
 
 import {
   r2Put,
