@@ -15,7 +15,8 @@
     "db:restore": "tsx scripts/restore-data.ts",
     "check:meta": "tsx scripts/check-meta-sync.ts",
     "test": "tsx --test src/lib/**/__tests__/*.test.ts",
-    "h3m:coverage": "tsx scripts/h3m-parse-coverage.ts"
+    "h3m:coverage": "tsx scripts/h3m-parse-coverage.ts",
+    "h3m:debug": "tsx scripts/h3m-debug.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
