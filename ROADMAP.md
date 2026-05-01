@@ -11,11 +11,13 @@ _(nothing active)_
 
 - [ ] **#8 `.h3m` parser** — Standalone parser sub-project at `src/lib/h3m/`. Auto-fill upload form, backfill empty `victory_condition` / `loss_condition` for 2,958 scraped maps. Designed to be extractable to its own npm package later.
   - [x] **v0.1** — SoD/AB/RoE basic header (size, name, description, difficulty); test scaffolding; coverage script
-  - [ ] **v0.2** — player blocks (counts, AI/human flags); win/loss conditions
+  - [x] **v0.2** — player blocks (counts, AI/human flags); win/loss conditions
+  - [x] **v0.5** — universal (Node + browser) parser; auto-fill on file select in `/upload`, including factions from allowedFactions bitmask
   - [ ] **v0.3** — HotA family (1.0, 1.4–1.5, 1.6+ magic numbers, format extensions, extra towns)
   - [ ] **v0.4** — WoG, Chronicles
-  - [ ] **v0.5** — wire into upload form for client-side auto-fill on file select
   - [ ] **v0.6** — backfill script: write parsed win/loss conditions into the DB
+  - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
+  - [ ] **investigate magic 0x06 / 0x0a** — 91 mystery files (some may be wrong-game uploads)
   - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.
 - [ ] **#6 AI series detection pass** — Long tail the heuristic missed (~95% of maps still untagged for series).

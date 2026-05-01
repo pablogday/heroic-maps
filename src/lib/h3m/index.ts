@@ -26,6 +26,7 @@ import { parseBasicHeader, type BasicHeader } from "./header";
 import {
   parsePlayers,
   summarizePlayers,
+  summarizeFactions,
   type PlayerSlot,
 } from "./playerInfo";
 import {
@@ -51,6 +52,9 @@ export interface ParseResult {
   aiPlayers: number | null;
   victory: VictoryCondition | null;
   loss: LossCondition | null;
+  /** Faction codes (our project's enum) playable across all enabled
+   * slots; union of each slot's allowedFactions bitmask. */
+  factions: string[] | null;
   warnings: string[];
   /** Filled if confidence=failed. */
   error: string | null;
@@ -62,10 +66,10 @@ const SUPPORTED_V0_1: ReadonlySet<FormatId> = new Set<FormatId>([
   "SoD",
 ]);
 
-export function parseH3m(input: Buffer): ParseResult {
+export function parseH3m(input: Uint8Array): ParseResult {
   const warnings: string[] = [];
 
-  let raw: Buffer;
+  let raw: Uint8Array;
   try {
     raw = isGzip(input) ? decompress(input) : input;
   } catch (e) {
@@ -127,6 +131,7 @@ export function parseH3m(input: Buffer): ParseResult {
   const counts = players
     ? summarizePlayers(players)
     : { totalPlayers: null, humanPlayers: null, aiPlayers: null };
+  const factions = players ? summarizeFactions(players) : null;
 
   return {
     confidence: confidenceFor(warnings, players, victory, loss),
@@ -140,6 +145,7 @@ export function parseH3m(input: Buffer): ParseResult {
     aiPlayers: counts.aiPlayers,
     victory,
     loss,
+    factions,
     warnings,
     error: null,
   };
@@ -168,6 +174,7 @@ function emptyResult(format: FormatId, versionMagic: number): ParseResult {
     aiPlayers: null,
     victory: null,
     loss: null,
+    factions: null,
     warnings: [],
     error: null,
   };

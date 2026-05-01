@@ -11,16 +11,37 @@ import {
   DIFFICULTIES,
   DIFFICULTY_LABEL,
 } from "@/lib/map-constants";
+import { parseH3m, unwrapMapFile } from "@/lib/h3m";
 
 const MAX_BYTES = 8 * 1024 * 1024;
+
+type AutoFillSummary = {
+  filledFields: string[];
+  warnings: string[];
+} | null;
 
 export function UploadForm() {
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [autoFill, setAutoFill] = useState<AutoFillSummary>(null);
   const [pending, startTransition] = useTransition();
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Controlled state for the fields the parser can fill.
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [version, setVersion] = useState("SoD");
+  const [size, setSize] = useState("M");
+  const [humanPlayers, setHumanPlayers] = useState("2");
+  const [aiPlayers, setAiPlayers] = useState("2");
+  const [difficulty, setDifficulty] = useState("");
+  const [hasUnderground, setHasUnderground] = useState(false);
+  const [selectedFactions, setSelectedFactions] = useState<Set<string>>(
+    new Set()
+  );
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    setAutoFill(null);
     if (!f) {
       setFileName(null);
       return;
@@ -33,6 +54,53 @@ export function UploadForm() {
     }
     setError(null);
     setFileName(f.name);
+
+    try {
+      const buf = new Uint8Array(await f.arrayBuffer());
+      const unwrapped = unwrapMapFile(buf);
+      if (!unwrapped.ok) return;
+      const parsed = parseH3m(unwrapped.bytes);
+      if (parsed.confidence === "failed" || !parsed.header) return;
+
+      const filled: string[] = [];
+
+      if (parsed.header.name) {
+        setName(parsed.header.name);
+        filled.push("name");
+      }
+      // Description: only fill if user hasn't typed anything yet.
+      if (parsed.header.description && description.trim() === "") {
+        setDescription(parsed.header.description);
+        filled.push("description");
+      }
+      if (parsed.mapVersion && parsed.mapVersion !== "Other") {
+        setVersion(parsed.mapVersion);
+        filled.push("version");
+      }
+      if (parsed.header.size) {
+        setSize(parsed.header.size);
+        filled.push("size");
+      }
+      if (parsed.header.difficulty) {
+        setDifficulty(parsed.header.difficulty);
+        filled.push("difficulty");
+      }
+      setHasUnderground(parsed.header.hasUnderground);
+      filled.push("underground");
+      if (parsed.humanPlayers !== null && parsed.aiPlayers !== null) {
+        setHumanPlayers(String(parsed.humanPlayers));
+        setAiPlayers(String(parsed.aiPlayers));
+        filled.push("players");
+      }
+      if (parsed.factions && parsed.factions.length > 0) {
+        setSelectedFactions(new Set(parsed.factions));
+        filled.push("factions");
+      }
+
+      setAutoFill({ filledFields: filled, warnings: parsed.warnings });
+    } catch {
+      // Parsing is best-effort; silently skip auto-fill on any error.
+    }
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,6 +131,13 @@ export function UploadForm() {
         {fileName && (
           <p className="mt-1 text-xs text-ink-soft">Selected: {fileName}</p>
         )}
+        {autoFill && autoFill.filledFields.length > 0 && (
+          <p className="mt-2 rounded border border-brass/40 bg-brass/10 px-2 py-1 text-xs text-ink">
+            ✨ Read from your file:{" "}
+            {autoFill.filledFields.join(", ")}. Edit anything that&apos;s
+            wrong.
+          </p>
+        )}
       </Field>
 
       <Field label="Name" hint="3–200 characters">
@@ -72,6 +147,8 @@ export function UploadForm() {
           required
           minLength={3}
           maxLength={200}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
         />
       </Field>
@@ -81,6 +158,8 @@ export function UploadForm() {
           name="description"
           maxLength={4000}
           rows={5}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
         />
       </Field>
@@ -90,7 +169,8 @@ export function UploadForm() {
           <select
             name="version"
             required
-            defaultValue="SoD"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
             className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
           >
             {VERSIONS.map((v) => (
@@ -105,7 +185,8 @@ export function UploadForm() {
           <select
             name="size"
             required
-            defaultValue="M"
+            value={size}
+            onChange={(e) => setSize(e.target.value)}
             className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
           >
             {SIZES.map((s) => (
@@ -122,7 +203,8 @@ export function UploadForm() {
             type="number"
             min={1}
             max={8}
-            defaultValue={2}
+            value={humanPlayers}
+            onChange={(e) => setHumanPlayers(e.target.value)}
             required
             className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
           />
@@ -134,7 +216,8 @@ export function UploadForm() {
             type="number"
             min={0}
             max={7}
-            defaultValue={2}
+            value={aiPlayers}
+            onChange={(e) => setAiPlayers(e.target.value)}
             required
             className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
           />
@@ -143,7 +226,8 @@ export function UploadForm() {
         <Field label="Difficulty" hint="Optional">
           <select
             name="difficulty"
-            defaultValue=""
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
             className="w-full rounded border border-brass/50 bg-parchment px-3 py-2 text-sm"
           >
             <option value="">—</option>
@@ -160,6 +244,8 @@ export function UploadForm() {
             <input
               name="hasUnderground"
               type="checkbox"
+              checked={hasUnderground}
+              onChange={(e) => setHasUnderground(e.target.checked)}
               className="h-4 w-4 accent-blood"
             />
             Has underground
@@ -178,6 +264,15 @@ export function UploadForm() {
                 type="checkbox"
                 name="factions"
                 value={f}
+                checked={selectedFactions.has(f)}
+                onChange={(e) => {
+                  setSelectedFactions((prev) => {
+                    const next = new Set(prev);
+                    if (e.target.checked) next.add(f);
+                    else next.delete(f);
+                    return next;
+                  });
+                }}
                 className="h-4 w-4 accent-blood"
               />
               {FACTION_LABEL[f]}

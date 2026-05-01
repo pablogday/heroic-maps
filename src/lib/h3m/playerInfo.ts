@@ -18,6 +18,9 @@ export interface PlayerSlot {
   canHumanPlay: boolean;
   canComputerPlay: boolean;
   enabled: boolean;
+  /** Bitmask of factions this player may pick. Bit positions match
+   * the FACTIONS array order: 0=castle … 8=conflux. */
+  allowedFactions: number;
 }
 
 /** Bytes to skip after the two play-flags when neither flag is set. */
@@ -49,7 +52,7 @@ function parseOneSlot(reader: BinaryReader, format: FormatId): PlayerSlot {
       throw new Error(`disabled-slot skip not known for format ${format}`);
     }
     reader.skip(skip);
-    return { canHumanPlay, canComputerPlay, enabled };
+    return { canHumanPlay, canComputerPlay, enabled, allowedFactions: 0 };
   }
 
   // aiTactic
@@ -59,8 +62,8 @@ function parseOneSlot(reader: BinaryReader, format: FormatId): PlayerSlot {
     reader.u8();
   }
   // allowedFactions bitmask: 1 byte for RoE, 2 bytes for AB/SoD
-  const factionBytes = format === "RoE" ? 1 : 2;
-  reader.skip(factionBytes);
+  const allowedFactions =
+    format === "RoE" ? reader.u8() : reader.u16le();
   // isFactionRandom
   reader.u8();
 
@@ -96,7 +99,39 @@ function parseOneSlot(reader: BinaryReader, format: FormatId): PlayerSlot {
     }
   }
 
-  return { canHumanPlay, canComputerPlay, enabled };
+  return { canHumanPlay, canComputerPlay, enabled, allowedFactions };
+}
+
+/**
+ * Bit position → our `Faction` codes. Matches in-game town order.
+ */
+const FACTION_BIT_NAMES = [
+  "castle",
+  "rampart",
+  "tower",
+  "inferno",
+  "necropolis",
+  "dungeon",
+  "stronghold",
+  "fortress",
+  "conflux",
+] as const;
+
+/**
+ * Union of allowed factions across enabled players, as our project's
+ * faction codes. Conservative: skips disabled slots and the "random"
+ * bit (no fixed bit position — that's a separate flag).
+ */
+export function summarizeFactions(slots: PlayerSlot[]): string[] {
+  let mask = 0;
+  for (const s of slots) {
+    if (s.enabled) mask |= s.allowedFactions;
+  }
+  const out: string[] = [];
+  for (let i = 0; i < FACTION_BIT_NAMES.length; i++) {
+    if (mask & (1 << i)) out.push(FACTION_BIT_NAMES[i]);
+  }
+  return out;
 }
 
 export function summarizePlayers(slots: PlayerSlot[]): {
