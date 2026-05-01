@@ -333,10 +333,6 @@ export default async function MapDetailPage({ params }: { params: Params }) {
               >
                 Download
               </a>
-              <p className="mt-2 hidden text-center text-[11px] text-ink-soft sm:block">
-                Files served by maps4heroes.com for now — local hosting coming.
-              </p>
-
               {/* Mobile only: explain why there's no download button. */}
               <div className="rounded border border-brass/40 bg-night-deep/30 p-3 text-center text-xs text-ink-soft sm:hidden">
                 <span className="mr-1" aria-hidden>🖥</span>
