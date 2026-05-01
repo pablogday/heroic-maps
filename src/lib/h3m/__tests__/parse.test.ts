@@ -16,9 +16,12 @@ function buildSoDHeader(opts: {
   difficulty: number;
   heroLevelLimit?: number;
   areAnyPlayers?: boolean;
+  /** Number of human-playable slots out of 8. Default 2. */
+  humans?: number;
+  /** Number of AI-only slots out of 8. Default 2. */
+  ais?: number;
 }): Buffer {
   const parts: Buffer[] = [];
-  // version: SoD = 0x1c
   const ver = Buffer.alloc(4);
   ver.writeUInt32LE(0x0000001c);
   parts.push(ver);
@@ -31,6 +34,30 @@ function buildSoDHeader(opts: {
   parts.push(lpString(opts.description));
   parts.push(Buffer.from([opts.difficulty]));
   parts.push(Buffer.from([opts.heroLevelLimit ?? 0]));
+
+  // 8 player slots — disabled slots are 2 flag bytes + 13 skip bytes.
+  // Enabled slots get a minimal valid block: aiTactic, p7, factions(2),
+  // isFactionRandom, hasMainTown=0, hasRandomHero, mainCustomHero=0xff,
+  // powerPlaceholders, heroCount=0, 3 padding = 13 trailing bytes.
+  const humans = opts.humans ?? 2;
+  const ais = opts.ais ?? 2;
+  for (let i = 0; i < 8; i++) {
+    const isHuman = i < humans;
+    const isAI = !isHuman && i < humans + ais;
+    if (!isHuman && !isAI) {
+      parts.push(Buffer.alloc(15));
+      continue;
+    }
+    parts.push(Buffer.from([isHuman ? 1 : 0, isAI || isHuman ? 1 : 0]));
+    // aiTactic, p7, factionsLo, factionsHi, isFactionRandom, hasMainTown=0,
+    // hasRandomHero, mainCustomHero=0xff, powerPlaceholders, heroCount=0,
+    // 3 padding bytes
+    parts.push(
+      Buffer.from([0, 0, 0, 0, 0, 0, 0, 0xff, 0, 0, 0, 0, 0])
+    );
+  }
+  // Standard victory + loss (0xff each)
+  parts.push(Buffer.from([0xff, 0xff]));
   return Buffer.concat(parts);
 }
 
@@ -105,5 +132,35 @@ describe("parseH3m — SoD synthetic header", () => {
     const res = parseH3m(buf);
     assert.equal(res.confidence, "failed");
     assert.match(res.error!, /too small/);
+  });
+
+  it("counts humans and AIs from player slots", () => {
+    const raw = buildSoDHeader({
+      width: 72,
+      hasUnderground: false,
+      name: "X",
+      description: "",
+      difficulty: 1,
+      humans: 3,
+      ais: 4,
+    });
+    const res = parseH3m(raw);
+    assert.equal(res.confidence, "high");
+    assert.equal(res.humanPlayers, 3);
+    assert.equal(res.aiPlayers, 4);
+    assert.equal(res.totalPlayers, 7);
+  });
+
+  it("reports standard victory and loss when none specified", () => {
+    const raw = buildSoDHeader({
+      width: 72,
+      hasUnderground: false,
+      name: "X",
+      description: "",
+      difficulty: 1,
+    });
+    const res = parseH3m(raw);
+    assert.equal(res.victory!.type, "standard");
+    assert.equal(res.loss!.type, "standard");
   });
 });

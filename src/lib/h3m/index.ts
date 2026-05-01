@@ -23,6 +23,17 @@ import {
   type FormatId,
 } from "./versions";
 import { parseBasicHeader, type BasicHeader } from "./header";
+import {
+  parsePlayers,
+  summarizePlayers,
+  type PlayerSlot,
+} from "./playerInfo";
+import {
+  parseVictory,
+  parseLoss,
+  type VictoryCondition,
+  type LossCondition,
+} from "./conditions";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -34,6 +45,12 @@ export interface ParseResult {
   /** Mapped to the project's `mapVersionEnum`. */
   mapVersion: ReturnType<typeof toMapVersion>;
   header: BasicHeader | null;
+  players: PlayerSlot[] | null;
+  totalPlayers: number | null;
+  humanPlayers: number | null;
+  aiPlayers: number | null;
+  victory: VictoryCondition | null;
+  loss: LossCondition | null;
   warnings: string[];
   /** Filled if confidence=failed. */
   error: string | null;
@@ -64,18 +81,13 @@ export function parseH3m(input: Buffer): ParseResult {
 
   if (!SUPPORTED_V0_1.has(format)) {
     return {
-      confidence: "failed",
-      format,
-      versionMagic,
-      mapVersion: toMapVersion(format),
-      header: null,
-      warnings,
+      ...emptyResult(format, versionMagic),
       error:
         format === "Unknown"
           ? `unrecognized version magic 0x${versionMagic
               .toString(16)
               .padStart(8, "0")}`
-          : `format ${format} not supported by parser v0.1`,
+          : `format ${format} not supported by parser v0.2`,
     };
   }
 
@@ -85,12 +97,7 @@ export function parseH3m(input: Buffer): ParseResult {
   } catch (e) {
     if (e instanceof EofError) {
       return {
-        confidence: "failed",
-        format,
-        versionMagic,
-        mapVersion: toMapVersion(format),
-        header: null,
-        warnings,
+        ...emptyResult(format, versionMagic),
         error: e.message,
       };
     }
@@ -104,13 +111,64 @@ export function parseH3m(input: Buffer): ParseResult {
     warnings.push(`unknown difficulty byte`);
   }
 
+  // From here on, anything that fails downgrades the result to
+  // "partial" — we still keep the basic header.
+  let players: PlayerSlot[] | null = null;
+  let victory: VictoryCondition | null = null;
+  let loss: LossCondition | null = null;
+  try {
+    players = parsePlayers(reader, format);
+    victory = parseVictory(reader, format);
+    loss = parseLoss(reader);
+  } catch (e) {
+    warnings.push(`players/conditions: ${errMsg(e)}`);
+  }
+
+  const counts = players
+    ? summarizePlayers(players)
+    : { totalPlayers: null, humanPlayers: null, aiPlayers: null };
+
   return {
-    confidence: warnings.length === 0 ? "high" : "partial",
+    confidence: confidenceFor(warnings, players, victory, loss),
     format,
     versionMagic,
     mapVersion: toMapVersion(format),
     header,
+    players,
+    totalPlayers: counts.totalPlayers,
+    humanPlayers: counts.humanPlayers,
+    aiPlayers: counts.aiPlayers,
+    victory,
+    loss,
     warnings,
+    error: null,
+  };
+}
+
+function confidenceFor(
+  warnings: string[],
+  players: PlayerSlot[] | null,
+  victory: VictoryCondition | null,
+  loss: LossCondition | null
+): Confidence {
+  if (!players || !victory || !loss) return "partial";
+  return warnings.length === 0 ? "high" : "partial";
+}
+
+function emptyResult(format: FormatId, versionMagic: number): ParseResult {
+  return {
+    confidence: "failed",
+    format,
+    versionMagic,
+    mapVersion: toMapVersion(format),
+    header: null,
+    players: null,
+    totalPlayers: null,
+    humanPlayers: null,
+    aiPlayers: null,
+    victory: null,
+    loss: null,
+    warnings: [],
     error: null,
   };
 }
@@ -120,15 +178,7 @@ function failed(
   format: FormatId = "Unknown",
   versionMagic = 0
 ): ParseResult {
-  return {
-    confidence: "failed",
-    format,
-    versionMagic,
-    mapVersion: toMapVersion(format),
-    header: null,
-    warnings: [],
-    error,
-  };
+  return { ...emptyResult(format, versionMagic), error };
 }
 
 function errMsg(e: unknown): string {
@@ -137,5 +187,7 @@ function errMsg(e: unknown): string {
 
 export type { BasicHeader } from "./header";
 export type { FormatId } from "./versions";
+export type { PlayerSlot } from "./playerInfo";
+export type { VictoryCondition, LossCondition } from "./conditions";
 export { unwrapMapFile } from "./unwrap";
 export type { Unwrapped } from "./unwrap";

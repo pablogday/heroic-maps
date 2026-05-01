@@ -68,6 +68,9 @@ async function main() {
     const byDbVersion = new Map<string, Bucket>();
     const byParsedFormat = new Map<string, Bucket>();
     const errorSamples = new Map<string, string[]>();
+    const victoryHistogram = new Map<string, number>();
+    const lossHistogram = new Map<string, number>();
+    const playerCountHistogram = new Map<number, number>();
     let processed = 0;
 
     const limit = pLimit(args.concurrency);
@@ -93,6 +96,25 @@ async function main() {
           parsedBucket.total++;
           dbBucket[result.confidence]++;
           parsedBucket[result.confidence]++;
+
+          if (result.victoryType) {
+            victoryHistogram.set(
+              result.victoryType,
+              (victoryHistogram.get(result.victoryType) ?? 0) + 1
+            );
+          }
+          if (result.lossType) {
+            lossHistogram.set(
+              result.lossType,
+              (lossHistogram.get(result.lossType) ?? 0) + 1
+            );
+          }
+          if (result.totalPlayers !== null) {
+            playerCountHistogram.set(
+              result.totalPlayers,
+              (playerCountHistogram.get(result.totalPlayers) ?? 0) + 1
+            );
+          }
 
           if (result.confidence === "failed" && result.error) {
             const list =
@@ -121,6 +143,31 @@ async function main() {
     console.log(`\n=== By parsed format (what the file actually is) ===`);
     printTable(byParsedFormat);
 
+    if (victoryHistogram.size > 0) {
+      console.log(`\n=== Victory conditions ===`);
+      for (const [k, v] of [...victoryHistogram.entries()].sort(
+        (a, b) => b[1] - a[1]
+      )) {
+        console.log(`  ${k.padEnd(22)} ${v}`);
+      }
+    }
+    if (lossHistogram.size > 0) {
+      console.log(`\n=== Loss conditions ===`);
+      for (const [k, v] of [...lossHistogram.entries()].sort(
+        (a, b) => b[1] - a[1]
+      )) {
+        console.log(`  ${k.padEnd(22)} ${v}`);
+      }
+    }
+    if (playerCountHistogram.size > 0) {
+      console.log(`\n=== Player counts ===`);
+      for (const [k, v] of [...playerCountHistogram.entries()].sort(
+        (a, b) => a[0] - b[0]
+      )) {
+        console.log(`  ${k} players: ${v}`);
+      }
+    }
+
     if (errorSamples.size > 0) {
       console.log(`\n=== Top failure modes ===`);
       const sorted = [...errorSamples.entries()].sort(
@@ -142,6 +189,9 @@ async function fetchAndParse(
   format: string;
   confidence: "high" | "partial" | "failed";
   error: string | null;
+  victoryType: string | null;
+  lossType: string | null;
+  totalPlayers: number | null;
 }> {
   try {
     const res = await fetch(url);
@@ -150,6 +200,9 @@ async function fetchAndParse(
         format: "Unknown",
         confidence: "failed",
         error: `HTTP ${res.status}`,
+        victoryType: null,
+        lossType: null,
+        totalPlayers: null,
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
@@ -159,15 +212,28 @@ async function fetchAndParse(
         format: "Unknown",
         confidence: "failed",
         error: unwrapped.reason,
+        victoryType: null,
+        lossType: null,
+        totalPlayers: null,
       };
     }
     const r = parseH3m(Buffer.from(unwrapped.bytes));
-    return { format: r.format, confidence: r.confidence, error: r.error };
+    return {
+      format: r.format,
+      confidence: r.confidence,
+      error: r.error,
+      victoryType: r.victory?.type ?? null,
+      lossType: r.loss?.type ?? null,
+      totalPlayers: r.totalPlayers,
+    };
   } catch (e) {
     return {
       format: "Unknown",
       confidence: "failed",
       error: e instanceof Error ? e.message : String(e),
+      victoryType: null,
+      lossType: null,
+      totalPlayers: null,
     };
   }
 }
