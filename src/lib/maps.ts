@@ -1,7 +1,13 @@
 import "server-only";
 import { and, desc, eq, gte, ilike, lte, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews, userMaps, users } from "@/db/schema";
+import {
+  maps,
+  mapSeriesTable,
+  reviews,
+  userMaps,
+  users,
+} from "@/db/schema";
 import type { Faction } from "./factions";
 import type { Difficulty, Size, Sort, Version } from "./map-constants";
 
@@ -268,4 +274,65 @@ export async function getRecentlyReviewed(limit = 6) {
     .innerJoin(users, eq(reviews.userId, users.id))
     .orderBy(desc(reviews.createdAt))
     .limit(limit);
+}
+
+/**
+ * Returns the series this map belongs to (if any) plus its sibling
+ * entries — for showing the "Part of X" block on the detail page.
+ *
+ * Sorting: by `seriesPosition` for sequels (so prev/next nav makes
+ * sense), alphabetical fallback for variants/remakes where position
+ * is null.
+ */
+export async function getSeriesContext(mapId: number) {
+  // Fetch this map's series, then siblings, in parallel-ish.
+  const [meta] = await db
+    .select({
+      seriesId: maps.seriesId,
+      seriesPosition: maps.seriesPosition,
+    })
+    .from(maps)
+    .where(eq(maps.id, mapId))
+    .limit(1);
+
+  if (!meta?.seriesId) return null;
+
+  const [[series], siblings] = await Promise.all([
+    db
+      .select({
+        id: mapSeriesTable.id,
+        slug: mapSeriesTable.slug,
+        name: mapSeriesTable.name,
+        kind: mapSeriesTable.kind,
+        description: mapSeriesTable.description,
+      })
+      .from(mapSeriesTable)
+      .where(eq(mapSeriesTable.id, meta.seriesId))
+      .limit(1),
+    db
+      .select({
+        id: maps.id,
+        slug: maps.slug,
+        name: maps.name,
+        version: maps.version,
+        previewKey: maps.previewKey,
+        seriesPosition: maps.seriesPosition,
+      })
+      .from(maps)
+      .where(eq(maps.seriesId, meta.seriesId))
+      .orderBy(
+        // Nulls last so positioned sequels lead, unpositioned siblings
+        // (variants/remakes) fall to the bottom alphabetically.
+        sql`${maps.seriesPosition} ASC NULLS LAST`,
+        maps.name
+      ),
+  ]);
+
+  if (!series) return null;
+
+  return {
+    series,
+    thisPosition: meta.seriesPosition,
+    siblings, // includes the current map; UI decides whether to skip it
+  };
 }

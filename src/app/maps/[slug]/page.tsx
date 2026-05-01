@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { maps, reviews, users } from "@/db/schema";
-import { getSimilarMaps } from "@/lib/maps";
+import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
+import { SeriesBlock } from "@/components/SeriesBlock";
 import { auth } from "@/auth";
 import { signInDiscord } from "@/app/actions/auth";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -56,20 +57,22 @@ export default async function MapDetailPage({ params }: { params: Params }) {
   const viewerId = session?.user?.id ?? null;
   const signedIn = viewerId != null;
 
-  // Sibling lookup runs in parallel-ish via the queries below — small
-  // index-friendly query, fine to do eagerly.
-  const similar = await getSimilarMaps(
-    {
-      id: m.id,
-      version: m.version,
-      size: m.size,
-      totalPlayers: m.totalPlayers,
-      hasUnderground: m.hasUnderground,
-      factions: m.factions,
-    },
-    3,
-    viewerId
-  );
+  // Sibling lookups run in parallel — both index-friendly queries.
+  const [similar, seriesCtx] = await Promise.all([
+    getSimilarMaps(
+      {
+        id: m.id,
+        version: m.version,
+        size: m.size,
+        totalPlayers: m.totalPlayers,
+        hasUnderground: m.hasUnderground,
+        factions: m.factions,
+      },
+      3,
+      viewerId
+    ),
+    getSeriesContext(m.id),
+  ]);
 
   // Library state for this user/map.
   const [libRow] = viewerId
@@ -453,6 +456,15 @@ export default async function MapDetailPage({ params }: { params: Params }) {
             </div>
           </aside>
         </div>
+
+        {seriesCtx && (
+          <SeriesBlock
+            series={seriesCtx.series}
+            siblings={seriesCtx.siblings}
+            thisMapId={m.id}
+            thisPosition={seriesCtx.thisPosition}
+          />
+        )}
 
         {similar.length > 0 && (
           <section className="mt-10">
