@@ -48,6 +48,19 @@ export const playedOutcomeEnum = pgEnum("played_outcome", [
 ]);
 
 /**
+ * How the maps in a series relate to each other:
+ *   sequel   — Episode I, II, III. Ordered by `series_position`.
+ *   variant  — Same map, different difficulty/scenario tweaks.
+ *              Order doesn't matter; `series_position` may be null.
+ *   remake   — Re-edits, "2.0", "Era Edition", language ports.
+ */
+export const seriesKindEnum = pgEnum("series_kind", [
+  "sequel",
+  "variant",
+  "remake",
+]);
+
+/**
  * Lookup tables for the canonical full names of each enum'd "type".
  * Acts as the source of truth for display labels — both server-side
  * rendering and (eventually) the public API consume these. The TS
@@ -71,6 +84,27 @@ export const difficultyLevelsTable = pgTable("difficulty_levels", {
   name: text("name").notNull(),
   sortOrder: integer("sort_order").notNull(),
 });
+
+/**
+ * Groups of related maps — sequels, difficulty variants, or re-edits.
+ * Populated initially by the heuristic detector
+ * (`scripts/detect-series.ts`); refinable later by an AI pass and/or
+ * manual admin edits.
+ */
+export const mapSeriesTable = pgTable(
+  "map_series",
+  {
+    id: serial("id").primaryKey(),
+    slug: varchar("slug", { length: 160 }).notNull().unique(),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: text("description"),
+    kind: seriesKindEnum("kind").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("map_series_kind_idx").on(t.kind)]
+);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -175,6 +209,15 @@ export const maps = pgTable(
     // a future Claude tagging pass will refine.
     factions: text("factions").array(),
 
+    // Series grouping (sequels/variants/remakes). Set by
+    // `scripts/detect-series.ts` based on name normalization. Null
+    // means "no detected series" — the vast majority will stay null
+    // until the AI pass runs.
+    seriesId: integer("series_id").references(() => mapSeriesTable.id, {
+      onDelete: "set null",
+    }),
+    seriesPosition: integer("series_position"),
+
     publishedAt: timestamp("published_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -191,6 +234,8 @@ export const maps = pgTable(
     index("maps_published_idx").on(t.publishedAt),
     // GIN index for fast `factions @> ARRAY[...]` containment queries.
     index("maps_factions_idx").using("gin", t.factions),
+    // Quick "all maps in this series" lookup, ordered by position.
+    index("maps_series_idx").on(t.seriesId, t.seriesPosition),
   ]
 );
 

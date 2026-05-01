@@ -15,6 +15,13 @@
       "when": 1777588920168,
       "tag": "0001_add_meta_lookup_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777606414971,
+      "tag": "0002_add_map_series",
+      "breakpoints": true
     }
   ]
 }
