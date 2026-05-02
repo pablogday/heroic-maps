@@ -163,6 +163,7 @@ export default async function MapDetailPage({ params }: { params: Params }) {
       createdAt: reviews.createdAt,
       authorName: users.name,
       authorImage: users.image,
+      authorUsername: users.username,
     })
     .from(reviews)
     .innerJoin(users, eq(reviews.userId, users.id))
@@ -349,9 +350,18 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                         ) : (
                           <div className="h-6 w-6 rounded-full bg-brass/30" />
                         )}
-                        <span className="text-sm font-medium text-ink">
-                          {r.authorName ?? "Anonymous"}
-                        </span>
+                        {r.authorUsername ? (
+                          <Link
+                            href={`/${r.authorUsername}`}
+                            className="text-sm font-medium text-ink hover:text-blood"
+                          >
+                            {r.authorName ?? "Anonymous"}
+                          </Link>
+                        ) : (
+                          <span className="text-sm font-medium text-ink">
+                            {r.authorName ?? "Anonymous"}
+                          </span>
+                        )}
                         <span className="text-xs text-brass">
                           {"★".repeat(r.rating)}
                           <span className="text-ink-soft/30">

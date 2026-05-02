@@ -17,7 +17,11 @@ import { IconHamburger, IconSignOut } from "./nav-icons";
 export function MobileNav({
   user,
 }: {
-  user: { name: string | null | undefined; image: string | null | undefined } | null;
+  user: {
+    name: string | null | undefined;
+    image: string | null | undefined;
+    username: string | null;
+  } | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -123,9 +127,31 @@ export function MobileNav({
               {user ? (
                 <>
                   <Separator />
+                  {user.username && (
+                    <li>
+                      <Link
+                        href={`/${user.username}`}
+                        onClick={close}
+                        className="flex items-center gap-3 rounded px-3 py-3 text-base font-display text-ink hover:bg-brass/15"
+                      >
+                        <span className="text-brass">👤</span>
+                        Profile
+                      </Link>
+                    </li>
+                  )}
                   {USER_LINKS.map((link) => (
                     <DrawerItem key={link.href} link={link} onClick={close} />
                   ))}
+                  <li>
+                    <Link
+                      href="/settings"
+                      onClick={close}
+                      className="flex items-center gap-3 rounded px-3 py-3 text-base font-display text-ink hover:bg-brass/15"
+                    >
+                      <span className="text-brass">⚙</span>
+                      Settings
+                    </Link>
+                  </li>
                   <li>
                     <button
                       type="button"

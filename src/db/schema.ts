@@ -110,6 +110,10 @@ export const users = pgTable("users", {
   id: text("id").primaryKey(),
   discordId: varchar("discord_id", { length: 64 }).unique(),
   name: varchar("name", { length: 80 }),
+  /** Public URL handle. Lowercase, [a-z0-9_-], 2..30 chars. Used in
+   * `/[username]` profile routes. Reserved against route collisions
+   * via `lib/reserved-usernames.ts`. */
+  username: varchar("username", { length: 30 }).unique(),
   email: text("email").unique(),
   emailVerified: timestamp("email_verified", { withTimezone: true }),
   image: text("image"),

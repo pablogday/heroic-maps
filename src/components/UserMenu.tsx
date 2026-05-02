@@ -17,9 +17,11 @@ import { IconSignOut } from "./nav-icons";
 export function UserMenu({
   name,
   image,
+  username,
 }: {
   name: string | null | undefined;
   image: string | null | undefined;
+  username: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -96,6 +98,17 @@ export function UserMenu({
           role="menu"
           className="card-brass absolute right-0 top-full z-50 mt-2 w-48 rounded p-1 shadow-lg"
         >
+          {username && (
+            <Link
+              href={`/${username}`}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded px-3 py-2 text-sm text-ink hover:bg-brass/20"
+            >
+              <span className="text-brass">👤</span>
+              Profile
+            </Link>
+          )}
           {USER_LINKS.map(({ href, label, Icon }) => (
             <Link
               key={href}
@@ -110,6 +123,15 @@ export function UserMenu({
               {label}
             </Link>
           ))}
+          <Link
+            href="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 rounded px-3 py-2 text-sm text-ink hover:bg-brass/20"
+          >
+            <span className="text-brass">⚙</span>
+            Settings
+          </Link>
           <div className="my-1 h-px bg-brass/30" />
           <button
             type="button"

@@ -1,13 +1,24 @@
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 import { HeroicMark } from "./HeroicMark";
 import { UserMenu } from "./UserMenu";
 import { MobileNav } from "./MobileNav";
 import { auth } from "@/auth";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { signInDiscord } from "@/app/actions/auth";
 
 export async function SiteHeader() {
   const session = await auth();
   const user = session?.user;
+  const [me] = user?.id
+    ? await db
+        .select({ username: users.username })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1)
+    : [undefined];
+  const username = me?.username ?? null;
 
   return (
     // z-50 so the mobile drawer's backdrop doesn't dim the header — the
@@ -36,7 +47,11 @@ export async function SiteHeader() {
         <div className="flex items-center gap-2">
           {user ? (
             // Desktop avatar dropdown (md+ only).
-            <UserMenu name={user.name} image={user.image} />
+            <UserMenu
+              name={user.name}
+              image={user.image}
+              username={username}
+            />
           ) : (
             // Desktop sign-in button (md+ only). Mobile signed-out users
             // sign in from inside the merged drawer instead.
@@ -50,7 +65,11 @@ export async function SiteHeader() {
             </form>
           )}
           <MobileNav
-            user={user ? { name: user.name, image: user.image } : null}
+            user={
+              user
+                ? { name: user.name, image: user.image, username }
+                : null
+            }
           />
         </div>
       </div>

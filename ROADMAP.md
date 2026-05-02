@@ -26,7 +26,7 @@ _(nothing active)_
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.
 - [ ] **#6 AI series detection pass** — Long tail the heuristic missed (~95% of maps still untagged for series).
 - [ ] **#16 Public API + RSS feed** — `/api/v1/maps`, `/api/v1/maps/{slug}`, `/api/v1/maps/{slug}/reviews`, `/api/v1/factions/{name}`, `/feed.rss`, `/feed.atom`. Same repo, versioned, rate-limited (Upstash or Vercel edge), CDN-cached, documented at `/api`. (~2 days max)
-- [ ] **#9 Public user profiles** `/u/[username]` — their reviews, favorites, played stats. (~1.5 hr)
+- [x] **Public user profiles at `/[username]`** — bare-handle URLs (Twitter/GitHub style) with reserved-username list to protect existing routes. Auto-generates handle from Discord name on first sign-in; `/settings` lets users edit it + bio. Profile page shows avatar, name, bio, joined date, stat strip, uploaded maps, recent playthroughs (private hidden from non-owners), recent reviews, favorites. Review authors on map detail pages now link to profiles.
 
 ## Going live
 
