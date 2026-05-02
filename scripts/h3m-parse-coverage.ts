@@ -74,6 +74,7 @@ async function main() {
     let terrainReached = 0;
     let terrainPlausible = 0;
     let objectsFullyParsed = 0;
+    let objectsEventsSane = 0;
     let objectsPartial = 0;
     const unsupportedClasses = new Map<string, number>();
     let highParsed = 0;
@@ -126,6 +127,7 @@ async function main() {
           if (result.terrainPlausible) terrainPlausible++;
           if (result.objectsFullyParsed) objectsFullyParsed++;
           else if (result.objectsPartial) objectsPartial++;
+          if (result.eventsSanityPassed) objectsEventsSane++;
           if (result.objectFailReason) {
             const m = result.objectFailReason.match(
               /unsupported object class (\d+)/
@@ -180,6 +182,13 @@ async function main() {
     );
     console.log(
       `Objects partial:    ${objectsPartial} (walked some, then hit unsupported class)`
+    );
+    console.log(
+      `Events-sane walks:  ${objectsEventsSane} / ${terrainReached} reached (${
+        terrainReached === 0
+          ? 0
+          : ((100 * objectsEventsSane) / terrainReached).toFixed(1)
+      }%) — cursor lands at plausible event count after objects`
     );
     if (unsupportedClasses.size > 0) {
       console.log(`\nTop unsupported object classes (extend objects.ts to lift):`);
@@ -251,6 +260,7 @@ async function fetchAndParse(
   objectsFullyParsed: boolean;
   objectsPartial: boolean;
   objectFailReason: string | null;
+  eventsSanityPassed: boolean;
 }> {
   try {
     const res = await fetch(url);
@@ -267,6 +277,7 @@ async function fetchAndParse(
         objectsFullyParsed: false,
         objectsPartial: false,
         objectFailReason: null,
+        eventsSanityPassed: false,
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
@@ -284,6 +295,7 @@ async function fetchAndParse(
         objectsFullyParsed: false,
         objectsPartial: false,
         objectFailReason: null,
+        eventsSanityPassed: false,
       };
     }
     const r = parseH3m(Buffer.from(unwrapped.bytes));
@@ -308,6 +320,7 @@ async function fetchAndParse(
       objectsFullyParsed,
       objectsPartial,
       objectFailReason: r.objects?.failedReason ?? null,
+      eventsSanityPassed: r.objects?.passedEventSanityCheck ?? false,
     };
   } catch (e) {
     return {

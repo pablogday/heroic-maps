@@ -20,7 +20,8 @@
     "h3m:backfill": "tsx scripts/h3m-backfill.ts",
     "h3m:render": "tsx scripts/h3m-render.ts",
     "h3m:validate": "tsx scripts/h3m-validate.ts",
-    "h3m:walk-trace": "tsx scripts/h3m-walk-trace.ts"
+    "h3m:walk-trace": "tsx scripts/h3m-walk-trace.ts",
+    "h3m:class-probe": "tsx scripts/h3m-class-probe.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
