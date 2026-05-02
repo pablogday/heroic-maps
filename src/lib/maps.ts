@@ -7,6 +7,7 @@ import {
   reviews,
   userMaps,
   users,
+  playSessions,
 } from "@/db/schema";
 import type { Faction } from "./factions";
 import type { Difficulty, Size, Sort, Version } from "./map-constants";
@@ -158,14 +159,33 @@ const SIZE_ORDER: Record<string, number> = {
   S: 0, M: 1, L: 2, XL: 3, H: 4, XH: 5, G: 6,
 };
 
+const DIFFICULTY_RANK: Record<string, number> = {
+  easy: 0,
+  normal: 1,
+  hard: 2,
+  expert: 3,
+  impossible: 4,
+};
+
 /**
- * Find up to `n` maps similar to the given one. Score = sum of:
- *   +3 same version
- *   +2 same hasUnderground
- *   +(2 - sizeDistance)
- *   +(2 - playerDistance)
- *   +1 per shared faction
- * Ties broken randomly so repeat visits surface variety.
+ * Recommendations engine. Score is a sum of multiple signals; the
+ * weights below were tuned for "feels right" rather than via
+ * empirical evals (we don't have the data yet).
+ *
+ * Signals:
+ *   +3   same version (RoE/SoD/HotA/...)
+ *   +5   same series (huge — sequels almost always belong together)
+ *   +2   same hasUnderground
+ *   +(3 - sizeDistance)        — same size = +3, ±1 tier = +2, ±2 = +1
+ *   +(3 - playerDistance)      — same player count = +3
+ *   +(3 - difficultyDistance)  — same difficulty = +3
+ *   +1.5 × shared factions
+ *   +0.5 × co_play_overlap     — users who played X also played candidate
+ *   + min(2, log10(downloads+1) / 2)         — quality nudge
+ *   + min(2, avg_rating - 3)                  — well-rated nudge (centered at 3)
+ *   -10  viewer has already played candidate (don't recommend dupes)
+ *
+ * Ties broken randomly so repeat visits still surface variety.
  */
 export async function getSimilarMaps(
   map: {
@@ -175,11 +195,15 @@ export async function getSimilarMaps(
     totalPlayers: number;
     hasUnderground: boolean;
     factions: string[] | null;
+    seriesId: number | null;
+    difficulty: string | null;
   },
   n = 3,
   viewerId: string | null = null
 ) {
   const sizeRank = SIZE_ORDER[map.size] ?? 1;
+  const difficultyRank =
+    map.difficulty != null ? DIFFICULTY_RANK[map.difficulty] : null;
   const factions = map.factions ?? [];
 
   const factionsArr = sql`ARRAY[${sql.join(
@@ -191,15 +215,57 @@ export async function getSimilarMaps(
     WHEN 'S' THEN 0 WHEN 'M' THEN 1 WHEN 'L' THEN 2 WHEN 'XL' THEN 3
     WHEN 'H' THEN 4 WHEN 'XH' THEN 5 WHEN 'G' THEN 6 ELSE 1 END`;
 
+  const difficultyRankCase = sql`CASE ${maps.difficulty}
+    WHEN 'easy' THEN 0 WHEN 'normal' THEN 1 WHEN 'hard' THEN 2
+    WHEN 'expert' THEN 3 WHEN 'impossible' THEN 4 ELSE NULL END`;
+
+  // Co-play signal: count users who played the source map AND each
+  // candidate. Cheap subquery — usually small.
+  const coPlayOverlap = sql<number>`COALESCE((
+    SELECT COUNT(DISTINCT a.user_id)::int
+    FROM ${playSessions} a
+    INNER JOIN ${playSessions} b ON b.user_id = a.user_id
+    WHERE a.map_id = ${map.id}
+      AND b.map_id = ${maps.id}
+      AND b.map_id <> ${map.id}
+  ), 0)`;
+
+  const viewerPlayedPenalty = viewerId
+    ? sql<number>`(CASE WHEN EXISTS (
+        SELECT 1 FROM ${playSessions}
+        WHERE user_id = ${viewerId} AND map_id = ${maps.id}
+      ) THEN -10 ELSE 0 END)`
+    : sql<number>`0`;
+
+  const seriesBoost =
+    map.seriesId != null
+      ? sql<number>`(CASE WHEN ${maps.seriesId} = ${map.seriesId} THEN 5 ELSE 0 END)`
+      : sql<number>`0`;
+
+  const difficultyScore =
+    difficultyRank != null
+      ? sql<number>`COALESCE(GREATEST(0, 3 - ABS(${difficultyRankCase} - ${difficultyRank})), 0)`
+      : sql<number>`0`;
+
   const score = sql<number>`
     (CASE WHEN ${maps.version} = ${map.version} THEN 3 ELSE 0 END)
+    + ${seriesBoost}
     + (CASE WHEN ${maps.hasUnderground} = ${map.hasUnderground} THEN 2 ELSE 0 END)
-    + GREATEST(0, 2 - ABS(${sizeRankCase} - ${sizeRank}))
-    + GREATEST(0, 2 - ABS(${maps.totalPlayers} - ${map.totalPlayers}))
-    + COALESCE(array_length(
+    + GREATEST(0, 3 - ABS(${sizeRankCase} - ${sizeRank}))
+    + GREATEST(0, 3 - ABS(${maps.totalPlayers} - ${map.totalPlayers}))
+    + ${difficultyScore}
+    + 1.5 * COALESCE(array_length(
         ARRAY(SELECT unnest(${maps.factions}) INTERSECT SELECT unnest(${factionsArr})),
         1
       ), 0)
+    + 0.5 * ${coPlayOverlap}
+    + LEAST(2, LOG(10, ${maps.downloadCount} + 1) / 2.0)
+    + LEAST(2, GREATEST(0,
+        CASE WHEN ${maps.ratingCount} > 0
+        THEN (${maps.ratingSum}::float / ${maps.ratingCount}) - 3
+        ELSE 0 END
+      ))
+    + ${viewerPlayedPenalty}
   `;
 
   const rows = await db
@@ -210,7 +276,6 @@ export async function getSimilarMaps(
     .orderBy(desc(score), sql`random()`)
     .limit(n);
 
-  // strip score from public type
   return rows as (MapCardData & { score: number })[];
 }
 

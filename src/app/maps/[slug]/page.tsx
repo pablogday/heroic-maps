@@ -122,8 +122,10 @@ export default async function MapDetailPage({ params }: { params: Params }) {
         totalPlayers: m.totalPlayers,
         hasUnderground: m.hasUnderground,
         factions: m.factions,
+        seriesId: m.seriesId,
+        difficulty: m.difficulty,
       },
-      3,
+      6,
       viewerId
     ),
     getSeriesContext(m.id),
@@ -633,7 +635,8 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                 Maps like this
               </h2>
               <span className="text-xs text-ink-soft">
-                Similar in size, players & towns
+                Same series, version, size, players, towns &amp; what others
+                played alongside it
               </span>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
