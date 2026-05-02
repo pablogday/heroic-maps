@@ -81,6 +81,7 @@ function topFaction(
 }
 
 type Params = Promise<{ slug: string }>;
+type SearchParams = Promise<{ reviewSort?: string }>;
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { slug } = await params;
@@ -96,7 +97,16 @@ export async function generateMetadata({ params }: { params: Params }) {
   };
 }
 
-export default async function MapDetailPage({ params }: { params: Params }) {
+export default async function MapDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const sp = await searchParams;
+  const reviewSort: "newest" | "helpful" =
+    sp.reviewSort === "helpful" ? "helpful" : "newest";
   const { slug } = await params;
   const [m] = await minDelay(
     db.select().from(maps).where(eq(maps.slug, slug)).limit(1),
@@ -218,7 +228,12 @@ export default async function MapDetailPage({ params }: { params: Params }) {
         ? and(eq(reviews.mapId, m.id), ne(reviews.userId, viewerId))
         : eq(reviews.mapId, m.id)
     )
-    .orderBy(desc(reviews.createdAt))
+    .orderBy(
+      reviewSort === "helpful"
+        ? desc(reviews.helpfulCount)
+        : desc(reviews.createdAt),
+      desc(reviews.createdAt)
+    )
     .limit(50);
 
   // Which of these reviews has the viewer reacted to?
@@ -255,6 +270,7 @@ export default async function MapDetailPage({ params }: { params: Params }) {
       ? new Date(m.publishedAt).toISOString()
       : undefined,
     inLanguage: "en",
+    author: m.author ? { "@type": "Person", name: m.author } : undefined,
     aggregateRating:
       avgRatingForLd !== null
         ? {
@@ -289,7 +305,14 @@ export default async function MapDetailPage({ params }: { params: Params }) {
         </Link>
 
         <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="font-display text-4xl text-ink">{m.name}</h1>
+          <div>
+            <h1 className="font-display text-4xl text-ink">{m.name}</h1>
+            {m.author && (
+              <p className="mt-1 text-sm text-ink-soft">
+                by <span className="text-ink">{m.author}</span>
+              </p>
+            )}
+          </div>
           <span className="text-sm text-ink-soft">
             {versionLabel(m.version)}
           </span>
@@ -338,13 +361,41 @@ export default async function MapDetailPage({ params }: { params: Params }) {
             </section>
 
             <section className="card-brass mt-4 rounded p-5">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-display text-lg text-ink">Reviews</h2>
-                <span className="text-xs text-ink-soft">
-                  {avgRating != null
-                    ? `★ ${avgRating.toFixed(1)} · ${m.ratingCount} rating${m.ratingCount === 1 ? "" : "s"}`
-                    : "No ratings yet"}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-ink-soft">
+                    {avgRating != null
+                      ? `★ ${avgRating.toFixed(1)} · ${m.ratingCount} rating${m.ratingCount === 1 ? "" : "s"}`
+                      : "No ratings yet"}
+                  </span>
+                  {otherReviews.length > 1 && (
+                    <div className="inline-flex overflow-hidden rounded border border-brass/40 text-xs">
+                      <Link
+                        href={`/maps/${m.slug}`}
+                        scroll={false}
+                        className={`px-2 py-0.5 transition-colors ${
+                          reviewSort === "newest"
+                            ? "bg-brass/20 text-ink"
+                            : "text-ink-soft hover:bg-brass/15"
+                        }`}
+                      >
+                        Newest
+                      </Link>
+                      <Link
+                        href={`/maps/${m.slug}?reviewSort=helpful`}
+                        scroll={false}
+                        className={`px-2 py-0.5 transition-colors ${
+                          reviewSort === "helpful"
+                            ? "bg-brass/20 text-ink"
+                            : "text-ink-soft hover:bg-brass/15"
+                        }`}
+                      >
+                        Most helpful
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* AI summary */}

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
+import { EmptyState } from "@/components/EmptyState";
 import { getRecentlyAdded, getRecentlyReviewed } from "@/lib/maps";
 import { formatRelativeTime } from "@/lib/relative-time";
 
@@ -78,9 +79,12 @@ export default async function FeedPage() {
         </div>
 
         {items.length === 0 ? (
-          <p className="text-center text-ink-soft py-12">
-            Nothing has happened yet. Check back soon.
-          </p>
+          <EmptyState
+            glyph="📜"
+            title="The realm is quiet"
+            body="No new arrivals or reviews yet. Check back soon — or seed the feed yourself."
+            cta={{ href: "/maps", label: "Browse maps" }}
+          />
         ) : (
           <ol className="relative space-y-4 border-l border-brass/40 pl-6">
             {items.map((it) => (

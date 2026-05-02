@@ -10,6 +10,7 @@ import { PageReveal } from "@/components/PageReveal";
 import { MapCard } from "@/components/MapCard";
 import type { MapCardData } from "@/lib/maps";
 import { stagger } from "@/lib/stagger";
+import { EmptyState } from "@/components/EmptyState";
 
 export const metadata = {
   title: "Library — Heroic Maps",
@@ -274,12 +275,33 @@ function Shell({
 }
 
 function EmptyMessage({ tab }: { tab: Tab }) {
+  if (tab === "favorites") {
+    return (
+      <EmptyState
+        glyph="♥"
+        title="No favorites yet"
+        body="Tap the ♥ on any map to keep it close at hand."
+        cta={{ href: "/maps", label: "Browse maps" }}
+      />
+    );
+  }
+  if (tab === "bookmarks") {
+    return (
+      <EmptyState
+        glyph="🔖"
+        title="No bookmarks yet"
+        body="Save maps to play later — they'll show up here."
+        cta={{ href: "/maps", label: "Browse maps" }}
+      />
+    );
+  }
   return (
-    <p className="text-center text-ink-soft py-16">
-      {tab === "favorites" && "No favorites yet — tap ♥ on any map."}
-      {tab === "bookmarks" && "No bookmarks yet — save maps to play later."}
-      {tab === "played" && "No playthroughs logged yet."}
-    </p>
+    <EmptyState
+      glyph="⚔"
+      title="No playthroughs logged yet"
+      body="Open a map's detail page and hit Played to start your journal."
+      cta={{ href: "/maps", label: "Find a map to play" }}
+    />
   );
 }
 

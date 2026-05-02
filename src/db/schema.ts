@@ -200,6 +200,10 @@ export const maps = pgTable(
     uploaderId: text("uploader_id").references(() => users.id, {
       onDelete: "set null",
     }),
+    /** Author name as the original author signed it (community
+     * pseudonym). For uploads this stays null — the uploader user
+     * relation is authoritative. */
+    author: text("author"),
     sourceUrl: text("source_url"),
 
     downloadCount: integer("download_count").notNull().default(0),

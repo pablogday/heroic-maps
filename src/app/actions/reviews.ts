@@ -8,6 +8,7 @@ import { reviews, reviewReactions, maps } from "@/db/schema";
 
 const MIN_BODY = 0; // body is optional
 const MAX_BODY = 4000;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -29,6 +30,45 @@ export async function submitReview(
   }
   if (trimmed.length < MIN_BODY) {
     return { ok: false, error: "Review too short." };
+  }
+
+  // Rate limit: don't allow > 1 NEW review per minute per user.
+  // Edits to the user's existing review on this map are exempt
+  // (one-row-per-user uniqueness already prevents spam there).
+  const [existingForMap] = await db
+    .select({ id: reviews.id })
+    .from(reviews)
+    .where(
+      and(
+        eq(reviews.mapId, mapId),
+        eq(reviews.userId, session.user.id)
+      )
+    )
+    .limit(1);
+  if (!existingForMap) {
+    const [recent] = await db
+      .select({ createdAt: reviews.createdAt })
+      .from(reviews)
+      .where(
+        and(
+          eq(reviews.userId, session.user.id),
+          sql`${reviews.createdAt} > now() - interval '${sql.raw(
+            String(RATE_LIMIT_WINDOW_SECONDS)
+          )} seconds'`
+        )
+      )
+      .orderBy(sql`${reviews.createdAt} desc`)
+      .limit(1);
+    if (recent) {
+      const elapsed = Math.floor(
+        (Date.now() - new Date(recent.createdAt).getTime()) / 1000
+      );
+      const wait = Math.max(1, RATE_LIMIT_WINDOW_SECONDS - elapsed);
+      return {
+        ok: false,
+        error: `Slow down — you can post another review in ${wait}s.`,
+      };
+    }
   }
 
   await db.transaction(async (tx) => {

@@ -9,6 +9,7 @@ import { MapCard } from "@/components/MapCard";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { Filters } from "./Filters";
 import { SmartSearchBar } from "./SmartSearchBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   DIFFICULTIES,
   listMaps,
@@ -124,9 +125,12 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
         <Filters />
 
         {items.length === 0 ? (
-          <p className="text-center text-ink-soft py-12">
-            No maps match your filters.
-          </p>
+          <EmptyState
+            glyph="🔎"
+            title="No maps match your filters"
+            body="Try widening your search — drop a chip or two and they'll come pouring back."
+            cta={{ href: "/maps", label: "Clear all filters" }}
+          />
         ) : view === "grid" ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((m, i) => (
