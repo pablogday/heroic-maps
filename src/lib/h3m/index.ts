@@ -38,7 +38,11 @@ import {
 import { parseHotaPrefix } from "./hota";
 import { walkToTerrain } from "./worldData";
 import { parseTerrain, type Terrain } from "./terrain";
-import { parseObjects, type ObjectsParseResult } from "./objects";
+import {
+  parseObjects,
+  featuresFor,
+  type ObjectsParseResult,
+} from "./objects";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -125,9 +129,10 @@ export function parseH3m(input: Uint8Array): ParseResult {
   // HotA inserts a variable-length prefix between the version magic
   // and the SoD-compatible basic header. Skip past it before reading
   // the header normally.
+  let hotaSubRev: number | null = null;
   if (HOTA_FORMATS.has(format)) {
     try {
-      parseHotaPrefix(reader);
+      hotaSubRev = parseHotaPrefix(reader).subRevision;
     } catch (e) {
       return {
         ...emptyResult(format, versionMagic),
@@ -224,14 +229,9 @@ export function parseH3m(input: Uint8Array): ParseResult {
 
   let objects: ObjectsParseResult | null = null;
   if (terrain) {
-    const objFormat: "RoE" | "AB" | "SoD" =
-      HOTA_FORMATS.has(format) || format === "WoG"
-        ? "SoD"
-        : format === "RoE" || format === "AB"
-          ? format
-          : "SoD";
+    const features = featuresFor(format, hotaSubRev);
     try {
-      objects = parseObjects(reader, objFormat);
+      objects = parseObjects(reader, features);
     } catch {
       // Walk failed entirely — extremely rare since parseObjects has
       // its own try/catch around the instance loop.

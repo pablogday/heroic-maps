@@ -132,12 +132,11 @@ async function main() {
             const m = result.objectFailReason.match(
               /unsupported object class (\d+)/
             );
-            if (m) {
-              unsupportedClasses.set(
-                m[1],
-                (unsupportedClasses.get(m[1]) ?? 0) + 1
-              );
-            }
+            const key = m ? `class ${m[1]}` : result.objectFailReason.slice(0, 60);
+            unsupportedClasses.set(
+              key,
+              (unsupportedClasses.get(key) ?? 0) + 1
+            );
           }
 
           if (result.confidence === "failed" && result.error) {
@@ -191,12 +190,12 @@ async function main() {
       }%) — cursor lands at plausible event count after objects`
     );
     if (unsupportedClasses.size > 0) {
-      console.log(`\nTop unsupported object classes (extend objects.ts to lift):`);
+      console.log(`\nTop object-walk failure reasons:`);
       const top = [...unsupportedClasses.entries()]
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 12);
-      for (const [cls, n] of top) {
-        console.log(`  class ${cls.padStart(3)} → ${n} maps blocked`);
+        .slice(0, 15);
+      for (const [reason, n] of top) {
+        console.log(`  ${reason} → ${n} maps`);
       }
     }
 
@@ -335,6 +334,7 @@ async function fetchAndParse(
       objectsFullyParsed: false,
       objectsPartial: false,
       objectFailReason: null,
+      eventsSanityPassed: false,
     };
   }
 }
