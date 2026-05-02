@@ -68,6 +68,7 @@ const SUPPORTED_FORMATS: ReadonlySet<FormatId> = new Set<FormatId>([
   "HotA1",
   "HotA2",
   "HotA3",
+  "WoG",
 ]);
 
 const HOTA_FORMATS: ReadonlySet<FormatId> = new Set<FormatId>([
@@ -122,10 +123,11 @@ export function parseH3m(input: Uint8Array): ParseResult {
   }
 
   let header: BasicHeader;
-  // HotA's basic header omits some SoD fields after difficulty.
-  // Treat HotA the same as SoD/AB for the parts that overlap; the
-  // post-header structure (player blocks etc.) we don't read yet.
-  const headerFormat = HOTA_FORMATS.has(format) ? "SoD" : format;
+  // HotA's basic header layout matches SoD; WoG is also a SoD
+  // descendant. Treat both as SoD for header + player-block widths.
+  const headerFormat = HOTA_FORMATS.has(format) || format === "WoG"
+    ? "SoD"
+    : format;
   try {
     header = parseBasicHeader(reader, headerFormat);
   } catch (e) {
@@ -146,22 +148,20 @@ export function parseH3m(input: Uint8Array): ParseResult {
   }
 
   // From here on, anything that fails downgrades the result to
-  // "partial" — we still keep the basic header. For HotA we don't
-  // parse player blocks yet — the structure has extended faction
-  // bitmasks and additional fields we haven't reverse-engineered.
+  // "partial" — we still keep the basic header. For HotA we attempt
+  // SoD-shape player blocks (best guess; faction bitmask width is
+  // the same and most fields appear identical).
   let players: PlayerSlot[] | null = null;
   let victory: VictoryCondition | null = null;
   let loss: LossCondition | null = null;
-  if (!HOTA_FORMATS.has(format)) {
-    try {
-      players = parsePlayers(reader, format);
-      victory = parseVictory(reader, format);
-      loss = parseLoss(reader);
-    } catch (e) {
-      warnings.push(`players/conditions: ${errMsg(e)}`);
-    }
-  } else {
-    warnings.push("HotA player blocks / conditions not yet parsed");
+  const playerFormat =
+    HOTA_FORMATS.has(format) || format === "WoG" ? "SoD" : format;
+  try {
+    players = parsePlayers(reader, playerFormat);
+    victory = parseVictory(reader, playerFormat);
+    loss = parseLoss(reader);
+  } catch (e) {
+    warnings.push(`players/conditions: ${errMsg(e)}`);
   }
 
   const counts = players

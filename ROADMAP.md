@@ -15,7 +15,7 @@ _(nothing active)_
   - [x] **v0.5** — universal (Node + browser) parser; auto-fill on file select in `/upload`, including factions from allowedFactions bitmask
   - [x] **v0.6** — backfill script wrote victory + loss conditions for 1586 maps; rendered as a "Conditions" card on map detail page
   - [x] **v0.3** — HotA family basic header (1016/1017 maps; 99.9%). Reverse-engineered the variable-length prefix structure across 7 observed `subRevision` values (0,1,3,5,7,8,9). Player blocks + win/loss conditions still pending — HotA's extended faction bitmask needs more work.
-  - [ ] **v0.4** — HotA player blocks + win/loss conditions + WoG support
+  - [x] **v0.4** — HotA player blocks + win/loss + WoG support. Empirical finding: HotA's player block layout is identical to SoD's (the wider faction pool still fits in 16 bits). WoG is also SoD-compatible. Total parse coverage: 96.5% of corpus high (2856/2959). Backfill filled victory/loss for 1282 additional maps and corrected factions arrays for 1521 maps.
   - [ ] **HotA `.h3c` campaign archives** — 91 files (magic 0x06 / 0x0a). Different format entirely (multi-map archives), needs a separate parser module
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
   - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
