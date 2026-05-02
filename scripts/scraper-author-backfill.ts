@@ -5,6 +5,11 @@
  *
  *   npm exec tsx scripts/scraper-author-backfill.ts -- --dry --pages=2
  *   npm exec tsx scripts/scraper-author-backfill.ts
+ *
+ * Coverage limit: maps4heroes.com only exposes ~290 maps via this
+ * listing today. Older scraped maps that aren't on the current
+ * paginated list will keep `author = null`. Detail pages handle the
+ * null gracefully (just don't render the "by …" line).
  */
 import { config } from "dotenv";
 config({ path: ".env.local", override: true });
@@ -18,7 +23,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type Args = { dry: boolean; pages?: number; perPage: number; force: boolean };
 function parseArgs(): Args {
-  const a: Args = { dry: false, perPage: 25, force: false };
+  const a: Args = { dry: false, perPage: 10, force: false };
   for (const arg of process.argv.slice(2)) {
     if (arg === "--dry") a.dry = true;
     else if (arg === "--force") a.force = true;
@@ -60,12 +65,20 @@ async function main() {
     let pages = 0;
     let offset = 0;
 
+    let consecutiveEmpty = 0;
     while (wantSourceIds.size > 0) {
       if (args.pages && pages >= args.pages) break;
       const html = await fetchPage(offset, args.perPage);
       const parsed = parseListingPage(html);
       pages++;
-      if (parsed.length === 0) break;
+      if (parsed.length === 0) {
+        consecutiveEmpty++;
+        if (consecutiveEmpty >= 5) break;
+        offset += args.perPage;
+        await sleep(2000);
+        continue;
+      }
+      consecutiveEmpty = 0;
 
       let pageWrote = 0;
       for (const m of parsed) {
