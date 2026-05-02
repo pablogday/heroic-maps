@@ -24,6 +24,47 @@ import { userMaps } from "@/db/schema";
 import { ReviewForm } from "./ReviewForm";
 import { PlayJournal } from "./PlayJournal";
 
+function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
+  const num = (k: string): number => {
+    const v = stats[k];
+    return typeof v === "number" ? v : 0;
+  };
+  const all: Array<[string, string, number]> = [
+    ["towns", "Towns", num("towns")],
+    ["heroes", "Heroes", num("heroes")],
+    ["monsters", "Monsters", num("monsters")],
+    ["mines", "Mines", num("mines")],
+    ["dwellings", "Creature dwellings", num("dwellings")],
+    ["resources", "Resources", num("resources")],
+    ["artifacts", "Artifacts", num("artifacts")],
+    ["treasures", "Treasures", num("treasures")],
+    ["questPoints", "Quest objects", num("questPoints")],
+    ["oneShotBoosts", "Bonus locations", num("oneShotBoosts")],
+  ];
+  const rows = all.filter((r) => r[2] > 0);
+
+  if (rows.length === 0) return null;
+
+  return (
+    <div className="card-brass rounded p-5">
+      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
+        Map contents
+      </h3>
+      <dl className="space-y-1.5 text-sm">
+        {rows.map(([key, label, n]) => (
+          <div key={key} className="flex items-baseline justify-between gap-2">
+            <dt className="text-ink-soft">{label}</dt>
+            <dd className="text-ink font-medium">{n}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 text-[11px] text-ink-soft/70">
+        Counted from the map file by our parser.
+      </p>
+    </div>
+  );
+}
+
 function topFaction(
   rows: Array<{ outcome: string; faction: string | null }>,
   outcome: "won" | "lost" | "abandoned"
@@ -486,6 +527,14 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                 )}
               </div>
             )}
+
+            {m.objectStats != null &&
+            typeof m.objectStats === "object" &&
+            "totalObjects" in m.objectStats ? (
+              <ObjectStatsCard
+                stats={m.objectStats as Record<string, unknown>}
+              />
+            ) : null}
 
             {(m.victoryCondition || m.lossCondition) && (
               <div className="card-brass rounded p-5">

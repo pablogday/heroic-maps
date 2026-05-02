@@ -314,7 +314,13 @@ export type {
   MapObjectInstance,
   ObjectsParseResult,
 } from "./objects";
-export { objectClassName } from "./objectClasses";
+export {
+  objectClassName,
+  categoryFor,
+  summarizeObjects,
+  emptyStats,
+} from "./objectClasses";
+export type { ObjectCategory, ObjectStats } from "./objectClasses";
 export { renderMinimap, TERRAIN_COLOR } from "./render";
 export type { MinimapImage, RenderOptions } from "./render";
 export { unwrapMapFile } from "./unwrap";

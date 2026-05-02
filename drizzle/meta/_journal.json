@@ -43,6 +43,13 @@
       "when": 1777708934294,
       "tag": "0005_add_username",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777735108713,
+      "tag": "0006_add_object_stats",
+      "breakpoints": true
     }
   ]
 }

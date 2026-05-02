@@ -1,0 +1,1 @@
+ALTER TABLE "maps" ADD COLUMN "object_stats" jsonb;

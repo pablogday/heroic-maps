@@ -66,7 +66,11 @@ async function main() {
       process.exit(1);
     }
 
-    const img = renderMinimap(parsed.terrain, { tileSize, bothLevels });
+    const img = renderMinimap(parsed.terrain, {
+      tileSize,
+      bothLevels,
+      objects: parsed.objects?.instances,
+    });
     console.log(
       `rendered ${img.width}×${img.height}px (tile=${tileSize}, ${
         parsed.terrain.hasUnderground && bothLevels ? "both levels" : "surface"

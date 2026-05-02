@@ -15,6 +15,7 @@ import {
   unwrapMapFile,
   renderMinimap,
   type Terrain,
+  type MapObjectInstance,
 } from "@/lib/h3m";
 import sharp from "sharp";
 
@@ -158,16 +159,21 @@ async function maybeRenderPreviews(
   const parsed = parseH3m(unwrapped.bytes);
   if (!parsed.terrain) return null;
 
+  const objects = parsed.objects?.instances;
   const surfaceKey = `previews/uploaded/${slug}.png`;
   await r2Put(
     surfaceKey,
-    await encodePng(parsed.terrain, false),
+    await encodePng(parsed.terrain, false, objects),
     "image/png"
   );
   let undergroundUrl: string | null = null;
   if (parsed.terrain.underground) {
     const undKey = `previews/uploaded/${slug}_und.png`;
-    await r2Put(undKey, await encodePng(parsed.terrain, true), "image/png");
+    await r2Put(
+      undKey,
+      await encodePng(parsed.terrain, true, objects),
+      "image/png"
+    );
     undergroundUrl = r2PublicUrl(undKey);
   }
   return { surfaceUrl: r2PublicUrl(surfaceKey), undergroundUrl };
@@ -175,9 +181,14 @@ async function maybeRenderPreviews(
 
 async function encodePng(
   terrain: Terrain,
-  underground: boolean
+  underground: boolean,
+  objects: MapObjectInstance[] | undefined
 ): Promise<Buffer> {
-  const img = renderMinimap(terrain, { tileSize: 4, underground });
+  const img = renderMinimap(terrain, {
+    tileSize: 4,
+    underground,
+    objects,
+  });
   return sharp(Buffer.from(img.pixels.buffer), {
     raw: { width: img.width, height: img.height, channels: 4 },
   })

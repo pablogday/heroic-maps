@@ -182,3 +182,173 @@ export const OBJECT_CLASS_NAMES: Record<number, string> = {
 export function objectClassName(id: number): string {
   return OBJECT_CLASS_NAMES[id] ?? `Object#${id}`;
 }
+
+/**
+ * Coarse user-facing categories. Used for the "Map Contents" UI card
+ * — small set of labels users actually care about.
+ */
+export type ObjectCategory =
+  | "towns"
+  | "heroes"
+  | "monsters"
+  | "mines"
+  | "resources"
+  | "artifacts"
+  | "dwellings"
+  | "questPoints"
+  | "oneShotBoosts"
+  | "treasures"
+  | "decorations"
+  | "other";
+
+export function categoryFor(objClass: number): ObjectCategory {
+  switch (objClass) {
+    case 77:
+    case 98:
+      return "towns";
+    case 34:
+    case 70:
+    case 62: // PRISON
+    case 214: // HERO_PLACEHOLDER
+      return "heroes";
+    case 54:
+    case 71:
+    case 72:
+    case 73:
+    case 74:
+    case 75:
+    case 162:
+    case 163:
+    case 164:
+      return "monsters";
+    case 53:
+      return "mines";
+    case 76:
+    case 79:
+      return "resources";
+    case 5: // ARTIFACT
+    case 65:
+    case 66:
+    case 67:
+    case 68:
+    case 69:
+    case 93: // SPELL_SCROLL
+      return "artifacts";
+    case 17:
+    case 18:
+    case 19:
+    case 20: // CREATURE_GENERATORS
+    case 78: // REFUGEE_CAMP
+    case 216:
+    case 217:
+    case 218: // RANDOM_DWELLINGS
+      return "dwellings";
+    case 6: // PANDORA
+    case 26: // EVENT
+    case 36: // GRAIL
+    case 83: // SEERS_HUT
+    case 215: // QUEST_GUARD
+      return "questPoints";
+    case 4: // ARENA
+    case 14: // SWAN_POND
+    case 27: // EYE_OF_MAGI
+    case 28: // FAERIE_RING
+    case 30: // FOUNTAIN_OF_FORTUNE
+    case 31: // FOUNTAIN_OF_YOUTH
+    case 32: // GARDEN_OF_REVELATION
+    case 38: // IDOL_OF_FORTUNE
+    case 39: // LEAN_TO
+    case 41: // LIBRARY_OF_ENLIGHTENMENT
+    case 47: // SCHOOL_OF_MAGIC
+    case 48: // MAGIC_SPRING
+    case 49: // MAGIC_WELL
+    case 51: // MERCENARY_CAMP
+    case 52: // MERMAID
+    case 55: // MYSTICAL_GARDEN
+    case 56: // OASIS
+    case 57: // OBELISK
+    case 58: // REDWOOD_OBSERVATORY
+    case 60: // PILLAR_OF_FIRE
+    case 61: // STAR_AXIS
+    case 64: // RALLY_FLAG
+    case 80: // SANCTUARY
+    case 81: // SCHOLAR
+    case 88: // SHRINE_OF_MAGIC_INCANTATION
+    case 89: // SHRINE_OF_MAGIC_GESTURE
+    case 90: // SHRINE_OF_MAGIC_THOUGHT
+    case 94: // STABLES
+    case 96: // TEMPLE
+    case 100: // LEARNING_STONE
+    case 102: // TREE_OF_KNOWLEDGE
+    case 107: // SCHOOL_OF_WAR
+    case 109: // WATER_WHEEL
+    case 112: // WINDMILL
+    case 113: // WITCH_HUT
+      return "oneShotBoosts";
+    case 12: // CAMPFIRE
+    case 22: // CORPSE
+    case 24: // DERELICT_SHIP
+    case 25: // DRAGON_UTOPIA
+    case 29: // FLOTSAM
+    case 82: // SEA_CHEST
+    case 84: // CRYPT
+    case 85: // SHIPWRECK
+    case 86: // SHIPWRECK_SURVIVOR
+    case 101: // TREASURE_CHEST
+    case 105: // WAGON
+    case 108: // WARRIORS_TOMB
+    case 16: // CREATURE_BANK
+    case 63: // PYRAMID
+      return "treasures";
+    default:
+      // 116-211 are AVL* decorations (lakes/mountains/rocks/trees)
+      if (objClass >= 116 && objClass <= 211) return "decorations";
+      return "other";
+  }
+}
+
+export interface ObjectStats {
+  towns: number;
+  heroes: number;
+  monsters: number;
+  mines: number;
+  resources: number;
+  artifacts: number;
+  dwellings: number;
+  questPoints: number;
+  oneShotBoosts: number;
+  treasures: number;
+  decorations: number;
+  other: number;
+  totalObjects: number;
+}
+
+export function emptyStats(): ObjectStats {
+  return {
+    towns: 0,
+    heroes: 0,
+    monsters: 0,
+    mines: 0,
+    resources: 0,
+    artifacts: 0,
+    dwellings: 0,
+    questPoints: 0,
+    oneShotBoosts: 0,
+    treasures: 0,
+    decorations: 0,
+    other: 0,
+    totalObjects: 0,
+  };
+}
+
+export function summarizeObjects(
+  instances: Array<{ objClass: number }>
+): ObjectStats {
+  const stats = emptyStats();
+  for (const inst of instances) {
+    const cat = categoryFor(inst.objClass);
+    stats[cat]++;
+    stats.totalObjects++;
+  }
+  return stats;
+}

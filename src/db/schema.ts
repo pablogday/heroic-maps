@@ -11,6 +11,7 @@ import {
   primaryKey,
   uniqueIndex,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -211,6 +212,14 @@ export const maps = pgTable(
     aiSummaryReviewCount: integer("ai_summary_review_count")
       .notNull()
       .default(0),
+
+    /** Counts of map objects by category, populated by the .h3m
+     * parser. Null when the parser couldn't fully walk the map's
+     * objects (~50% of corpus). Shape:
+     *   { towns, heroes, monsters, mines, resources, artifacts,
+     *     dwellings, questPoints, oneShotBoosts, decorations,
+     *     totalObjects } */
+    objectStats: jsonb("object_stats"),
 
     // Towns/factions present on the map. Best-effort: inferred from
     // description keywords by `scripts/backfill-factions.ts` for now;
