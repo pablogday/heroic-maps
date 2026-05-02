@@ -8,6 +8,7 @@ import { RatingBadge } from "@/components/RatingBadge";
 import { MapCard } from "@/components/MapCard";
 import { BookmarkButton } from "@/components/BookmarkButton";
 import { Filters } from "./Filters";
+import { SmartSearchBar } from "./SmartSearchBar";
 import {
   DIFFICULTIES,
   listMaps,
@@ -35,6 +36,7 @@ type SP = Promise<{
   sort?: string;
   page?: string;
   view?: string;
+  nlError?: string;
 }>;
 
 const isVersion = (v?: string): v is Version =>
@@ -100,6 +102,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
           </span>
         </div>
 
+        <SmartSearchBar initialError={sp.nlError} />
         <Filters />
 
         {items.length === 0 ? (
