@@ -337,10 +337,6 @@ export const userMaps = pgTable(
     favorited: boolean("favorited").notNull().default(false),
     bookmarked: boolean("bookmarked").notNull().default(false),
 
-    playedAt: timestamp("played_at", { withTimezone: true }),
-    playedOutcome: playedOutcomeEnum("played_outcome"),
-    playedNotes: text("played_notes"),
-
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -352,15 +348,72 @@ export const userMaps = pgTable(
     primaryKey({ columns: [t.userId, t.mapId] }),
     index("user_maps_user_fav_idx").on(t.userId, t.favorited),
     index("user_maps_user_bookmark_idx").on(t.userId, t.bookmarked),
-    index("user_maps_user_played_idx").on(t.userId, t.playedAt),
   ]
 );
+
+/**
+ * One row per user-recorded playthrough of a map. A single user can
+ * have multiple sessions for the same map (different factions,
+ * different outcomes, replays). This is the journal: the source of
+ * truth for "played" data.
+ *
+ * The legacy `userMaps.playedAt`/`playedOutcome`/`playedNotes` columns
+ * have been retired; "has the user played this map" is now derived
+ * from `EXISTS (SELECT 1 FROM play_sessions ...)`.
+ */
+export const playSessions = pgTable(
+  "play_sessions",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    mapId: integer("map_id")
+      .notNull()
+      .references(() => maps.id, { onDelete: "cascade" }),
+
+    /** When the playthrough happened (user-supplied; defaults to insert time). */
+    playedAt: timestamp("played_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    /** Which faction the user played as. Optional — some sessions are
+     * "I tried this map" without a specific faction record. */
+    faction: text("faction"),
+    outcome: playedOutcomeEnum("outcome").notNull(),
+    /** In-game days taken to reach the end state. Optional. */
+    durationDays: integer("duration_days"),
+    notes: text("notes"),
+    /** Public sessions appear on the map's "recent playthroughs" feed
+     * and (eventually) the user's public profile. Private = only the
+     * user sees them. */
+    isPublic: boolean("is_public").notNull().default(true),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("play_sessions_user_played_idx").on(t.userId, t.playedAt),
+    index("play_sessions_map_played_idx").on(t.mapId, t.playedAt),
+    index("play_sessions_user_map_idx").on(t.userId, t.mapId),
+  ]
+);
+
+export const playSessionsRelations = relations(playSessions, ({ one }) => ({
+  user: one(users, { fields: [playSessions.userId], references: [users.id] }),
+  map: one(maps, { fields: [playSessions.mapId], references: [maps.id] }),
+}));
 
 export type Map = typeof maps.$inferSelect;
 export type NewMap = typeof maps.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type UserMap = typeof userMaps.$inferSelect;
+export type PlaySession = typeof playSessions.$inferSelect;
+export type NewPlaySession = typeof playSessions.$inferInsert;
 
 // silence unused import in future expansion
 export const _sql = sql;

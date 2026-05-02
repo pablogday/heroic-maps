@@ -14,10 +14,10 @@ _(nothing active)_
   - [x] **v0.2** — player blocks (counts, AI/human flags); win/loss conditions
   - [x] **v0.5** — universal (Node + browser) parser; auto-fill on file select in `/upload`, including factions from allowedFactions bitmask
   - [x] **v0.6** — backfill script wrote victory + loss conditions for 1586 maps; rendered as a "Conditions" card on map detail page
-  - [ ] **v0.3** — HotA family. **Status:** prefix between version magic and basic header varies per map (10–29 bytes observed across sample), conditional on a `subRevision` field. Reverse-engineering from bytes alone is risky; needs proper reference docs (HotA team source or community spec) before we ship code. Debug tool ready at `npm run h3m:debug -- <slug-or-id>`.
-  - [ ] **v0.4** — WoG, Chronicles
+  - [x] **v0.3** — HotA family basic header (1016/1017 maps; 99.9%). Reverse-engineered the variable-length prefix structure across 7 observed `subRevision` values (0,1,3,5,7,8,9). Player blocks + win/loss conditions still pending — HotA's extended faction bitmask needs more work.
+  - [ ] **v0.4** — HotA player blocks + win/loss conditions + WoG support
+  - [ ] **HotA `.h3c` campaign archives** — 91 files (magic 0x06 / 0x0a). Different format entirely (multi-map archives), needs a separate parser module
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
-  - [ ] **investigate magic 0x06 / 0x0a** — 91 mystery files (some may be wrong-game uploads)
   - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.
 - [ ] **#6 AI series detection pass** — Long tail the heuristic missed (~95% of maps still untagged for series).
@@ -75,7 +75,8 @@ _(nothing active)_
 
 ## Shipped
 
-- **#7 Real upload** — `/upload` accepts `.h3m`/`.h3c`/`.zip` (≤8 MB), validates metadata, uploads to R2 at `maps/uploaded/<slug>.<ext>`, writes `maps` row tied to `uploaderId`, redirects to detail page. 5 uploads/day per user. Manual metadata entry for now (auto-fill comes with #8).
+- **Play journal** — `play_sessions` table + `playSessions.ts` actions + `<PlayJournal>` component on map detail. Multiple sessions per user-map (faction, outcome, in-game days, notes, public/private). "Your history with this map" inline list with edit/delete. Aggregate "Playthroughs" stats card (total / won / lost / abandoned + top winning faction). `/library?tab=played` shows distinct maps sorted by latest session, with replay count.
+- **#7 Real upload** — `/upload` accepts `.h3m`/`.h3c`/`.zip` (≤8 MB), validates metadata, uploads to R2 at `maps/uploaded/<slug>.<ext>`, writes `maps` row tied to `uploaderId`, redirects to detail page. 5 uploads/day per user. Auto-fill on file select (parser v0.5).
 - Scaffold + retro-modern theme + landing page
 - Drizzle ORM, Neon Postgres, full migration discipline (baseline, snapshot/restore scripts, `db:snapshot`/`db:restore`)
 - Scraper: 2,966 maps with previews, descriptions, source rating

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews, users } from "@/db/schema";
+import { maps, reviews, users, playSessions } from "@/db/schema";
 import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
@@ -22,8 +22,20 @@ import { minDelay } from "@/lib/min-delay";
 import { stagger } from "@/lib/stagger";
 import { userMaps } from "@/db/schema";
 import { ReviewForm } from "./ReviewForm";
-import { MapActions } from "./MapActions";
-import type { PlayedOutcome } from "@/app/actions/library";
+import { PlayJournal } from "./PlayJournal";
+
+function topFaction(
+  rows: Array<{ outcome: string; faction: string | null }>,
+  outcome: "won" | "lost" | "abandoned"
+): string | null {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (r.outcome !== outcome || !r.faction) continue;
+    counts.set(r.faction, (counts.get(r.faction) ?? 0) + 1);
+  }
+  if (counts.size === 0) return null;
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+}
 
 type Params = Promise<{ slug: string }>;
 
@@ -74,13 +86,12 @@ export default async function MapDetailPage({ params }: { params: Params }) {
     getSeriesContext(m.id),
   ]);
 
-  // Library state for this user/map.
+  // Library state (favorite/bookmark) for this user/map.
   const [libRow] = viewerId
     ? await db
         .select({
           favorited: userMaps.favorited,
           bookmarked: userMaps.bookmarked,
-          playedOutcome: userMaps.playedOutcome,
         })
         .from(userMaps)
         .where(and(eq(userMaps.userId, viewerId), eq(userMaps.mapId, m.id)))
@@ -89,7 +100,46 @@ export default async function MapDetailPage({ params }: { params: Params }) {
   const libState = {
     favorited: libRow?.favorited ?? false,
     bookmarked: libRow?.bookmarked ?? false,
-    playedOutcome: (libRow?.playedOutcome ?? null) as PlayedOutcome | null,
+  };
+
+  // Viewer's play sessions for this map.
+  const mySessions = viewerId
+    ? await db
+        .select({
+          id: playSessions.id,
+          playedAt: playSessions.playedAt,
+          faction: playSessions.faction,
+          outcome: playSessions.outcome,
+          durationDays: playSessions.durationDays,
+          notes: playSessions.notes,
+          isPublic: playSessions.isPublic,
+        })
+        .from(playSessions)
+        .where(
+          and(
+            eq(playSessions.userId, viewerId),
+            eq(playSessions.mapId, m.id)
+          )
+        )
+        .orderBy(desc(playSessions.playedAt))
+    : [];
+
+  // Aggregate stats across all public sessions on this map.
+  const allSessions = await db
+    .select({
+      outcome: playSessions.outcome,
+      faction: playSessions.faction,
+    })
+    .from(playSessions)
+    .where(
+      and(eq(playSessions.mapId, m.id), eq(playSessions.isPublic, true))
+    );
+  const sessionStats = {
+    total: allSessions.length,
+    won: allSessions.filter((s) => s.outcome === "won").length,
+    lost: allSessions.filter((s) => s.outcome === "lost").length,
+    abandoned: allSessions.filter((s) => s.outcome === "abandoned").length,
+    topWinningFaction: topFaction(allSessions, "won"),
   };
 
   const [myReview] = viewerId
@@ -341,10 +391,16 @@ export default async function MapDetailPage({ params }: { params: Params }) {
 
               {viewerId ? (
                 <div className="mt-4">
-                  <MapActions
+                  <PlayJournal
                     mapId={m.id}
                     slug={m.slug}
-                    initial={libState}
+                    signedIn={true}
+                    initial={mySessions.map((s) => ({
+                      ...s,
+                      outcome: s.outcome as "won" | "lost" | "abandoned",
+                    }))}
+                    mapFactions={m.factions ?? null}
+                    initialLibrary={libState}
                   />
                 </div>
               ) : (
@@ -393,6 +449,33 @@ export default async function MapDetailPage({ params }: { params: Params }) {
               teamCount={m.teamCount}
               hasUnderground={m.hasUnderground}
             />
+
+            {sessionStats.total > 0 && (
+              <div className="card-brass rounded p-5">
+                <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
+                  Playthroughs
+                </h3>
+                <p className="text-sm text-ink">
+                  <span className="font-medium">{sessionStats.total}</span>{" "}
+                  logged ·{" "}
+                  <span className="text-emerald">{sessionStats.won} won</span>
+                  {" · "}
+                  <span className="text-blood">{sessionStats.lost} lost</span>
+                  {sessionStats.abandoned > 0 &&
+                    ` · ${sessionStats.abandoned} abandoned`}
+                </p>
+                {sessionStats.topWinningFaction && (
+                  <p className="mt-1 text-xs text-ink-soft">
+                    Top winning faction:{" "}
+                    <span className="text-ink">
+                      {FACTION_LABEL[
+                        sessionStats.topWinningFaction as Faction
+                      ] ?? sessionStats.topWinningFaction}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
 
             {(m.victoryCondition || m.lossCondition) && (
               <div className="card-brass rounded p-5">

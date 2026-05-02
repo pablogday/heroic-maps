@@ -35,6 +35,7 @@ import {
   type VictoryCondition,
   type LossCondition,
 } from "./conditions";
+import { parseHotaPrefix } from "./hota";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -60,10 +61,19 @@ export interface ParseResult {
   error: string | null;
 }
 
-const SUPPORTED_V0_1: ReadonlySet<FormatId> = new Set<FormatId>([
+const SUPPORTED_FORMATS: ReadonlySet<FormatId> = new Set<FormatId>([
   "RoE",
   "AB",
   "SoD",
+  "HotA1",
+  "HotA2",
+  "HotA3",
+]);
+
+const HOTA_FORMATS: ReadonlySet<FormatId> = new Set<FormatId>([
+  "HotA1",
+  "HotA2",
+  "HotA3",
 ]);
 
 export function parseH3m(input: Uint8Array): ParseResult {
@@ -83,7 +93,7 @@ export function parseH3m(input: Uint8Array): ParseResult {
   const versionMagic = reader.u32le();
   const format = VERSION_MAGIC[versionMagic] ?? "Unknown";
 
-  if (!SUPPORTED_V0_1.has(format)) {
+  if (!SUPPORTED_FORMATS.has(format)) {
     return {
       ...emptyResult(format, versionMagic),
       error:
@@ -91,13 +101,33 @@ export function parseH3m(input: Uint8Array): ParseResult {
           ? `unrecognized version magic 0x${versionMagic
               .toString(16)
               .padStart(8, "0")}`
-          : `format ${format} not supported by parser v0.2`,
+          : format === "Campaign06" || format === "Campaign0A"
+            ? "campaign archive (.h3c) — not a single-map file"
+            : `format ${format} not yet supported by parser`,
     };
   }
 
+  // HotA inserts a variable-length prefix between the version magic
+  // and the SoD-compatible basic header. Skip past it before reading
+  // the header normally.
+  if (HOTA_FORMATS.has(format)) {
+    try {
+      parseHotaPrefix(reader);
+    } catch (e) {
+      return {
+        ...emptyResult(format, versionMagic),
+        error: `HotA prefix: ${errMsg(e)}`,
+      };
+    }
+  }
+
   let header: BasicHeader;
+  // HotA's basic header omits some SoD fields after difficulty.
+  // Treat HotA the same as SoD/AB for the parts that overlap; the
+  // post-header structure (player blocks etc.) we don't read yet.
+  const headerFormat = HOTA_FORMATS.has(format) ? "SoD" : format;
   try {
-    header = parseBasicHeader(reader, format);
+    header = parseBasicHeader(reader, headerFormat);
   } catch (e) {
     if (e instanceof EofError) {
       return {
@@ -116,16 +146,22 @@ export function parseH3m(input: Uint8Array): ParseResult {
   }
 
   // From here on, anything that fails downgrades the result to
-  // "partial" — we still keep the basic header.
+  // "partial" — we still keep the basic header. For HotA we don't
+  // parse player blocks yet — the structure has extended faction
+  // bitmasks and additional fields we haven't reverse-engineered.
   let players: PlayerSlot[] | null = null;
   let victory: VictoryCondition | null = null;
   let loss: LossCondition | null = null;
-  try {
-    players = parsePlayers(reader, format);
-    victory = parseVictory(reader, format);
-    loss = parseLoss(reader);
-  } catch (e) {
-    warnings.push(`players/conditions: ${errMsg(e)}`);
+  if (!HOTA_FORMATS.has(format)) {
+    try {
+      players = parsePlayers(reader, format);
+      victory = parseVictory(reader, format);
+      loss = parseLoss(reader);
+    } catch (e) {
+      warnings.push(`players/conditions: ${errMsg(e)}`);
+    }
+  } else {
+    warnings.push("HotA player blocks / conditions not yet parsed");
   }
 
   const counts = players

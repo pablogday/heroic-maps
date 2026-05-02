@@ -1,14 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { userMaps } from "@/db/schema";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
-
-export type PlayedOutcome = "won" | "lost" | "abandoned";
 
 async function requireUser() {
   const session = await auth();
@@ -16,7 +14,6 @@ async function requireUser() {
   return session.user.id;
 }
 
-/** Upsert a single boolean flag — `favorited` or `bookmarked`. */
 async function setFlag(
   userId: string,
   mapId: number,
@@ -39,7 +36,8 @@ async function setFlag(
       },
     });
 
-  // Garbage-collect rows that no longer carry any state.
+  // Garbage-collect rows where neither flag is set. Played sessions
+  // live in `play_sessions` now, so this row carries no state.
   await db
     .delete(userMaps)
     .where(
@@ -47,8 +45,7 @@ async function setFlag(
         eq(userMaps.userId, userId),
         eq(userMaps.mapId, mapId),
         eq(userMaps.favorited, false),
-        eq(userMaps.bookmarked, false),
-        sql`${userMaps.playedAt} IS NULL`
+        eq(userMaps.bookmarked, false)
       )
     );
 }
@@ -74,59 +71,6 @@ export async function toggleBookmark(
   const userId = await requireUser();
   if (!userId) return { ok: false, error: "Sign in required." };
   await setFlag(userId, mapId, "bookmarked", next);
-  revalidatePath(`/maps/${slug}`);
-  revalidatePath("/library");
-  return { ok: true };
-}
-
-export async function setPlayed(
-  mapId: number,
-  slug: string,
-  outcome: PlayedOutcome | null
-): Promise<ActionResult> {
-  const userId = await requireUser();
-  if (!userId) return { ok: false, error: "Sign in required." };
-
-  if (outcome == null) {
-    // Clear the played status — keep the row only if other flags survive.
-    await db
-      .insert(userMaps)
-      .values({ userId, mapId, playedAt: null, playedOutcome: null })
-      .onConflictDoUpdate({
-        target: [userMaps.userId, userMaps.mapId],
-        set: { playedAt: null, playedOutcome: null, updatedAt: new Date() },
-      });
-
-    await db
-      .delete(userMaps)
-      .where(
-        and(
-          eq(userMaps.userId, userId),
-          eq(userMaps.mapId, mapId),
-          eq(userMaps.favorited, false),
-          eq(userMaps.bookmarked, false),
-          sql`${userMaps.playedAt} IS NULL`
-        )
-      );
-  } else {
-    await db
-      .insert(userMaps)
-      .values({
-        userId,
-        mapId,
-        playedAt: new Date(),
-        playedOutcome: outcome,
-      })
-      .onConflictDoUpdate({
-        target: [userMaps.userId, userMaps.mapId],
-        set: {
-          playedAt: new Date(),
-          playedOutcome: outcome,
-          updatedAt: new Date(),
-        },
-      });
-  }
-
   revalidatePath(`/maps/${slug}`);
   revalidatePath("/library");
   return { ok: true };
