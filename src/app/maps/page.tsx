@@ -102,11 +102,21 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
        <PageReveal>
-        <div className="mb-6 flex items-baseline justify-between">
+        <div className="mb-6 flex items-baseline justify-between gap-4">
           <h1 className="font-display text-3xl text-ink">Browse maps</h1>
-          <span className="text-sm text-ink-soft">
-            {total.toLocaleString()} maps
-          </span>
+          <div className="flex items-baseline gap-3">
+            <Link
+              href="/maps/random"
+              prefetch={false}
+              className="rounded border border-brass/50 px-3 py-1 text-sm text-ink-soft hover:bg-brass/15 hover:text-ink"
+              title="Open a random map"
+            >
+              🎲 Random
+            </Link>
+            <span className="text-sm text-ink-soft">
+              {total.toLocaleString()} maps
+            </span>
+          </div>
         </div>
 
         <SmartSearchBar initialError={sp.nlError} />

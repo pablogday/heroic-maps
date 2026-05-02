@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews, users, playSessions } from "@/db/schema";
+import { maps, reviews, users, playSessions, reviewReactions } from "@/db/schema";
 import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
@@ -23,6 +23,8 @@ import { stagger } from "@/lib/stagger";
 import { userMaps } from "@/db/schema";
 import { ReviewForm } from "./ReviewForm";
 import { PlayJournal } from "./PlayJournal";
+import { PreviewLightboxTrigger } from "./PreviewLightboxTrigger";
+import { HelpfulButton } from "./HelpfulButton";
 
 function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
   const num = (k: string): number => {
@@ -202,6 +204,7 @@ export default async function MapDetailPage({ params }: { params: Params }) {
       rating: reviews.rating,
       body: reviews.body,
       createdAt: reviews.createdAt,
+      helpfulCount: reviews.helpfulCount,
       authorName: users.name,
       authorImage: users.image,
       authorUsername: users.username,
@@ -215,6 +218,22 @@ export default async function MapDetailPage({ params }: { params: Params }) {
     )
     .orderBy(desc(reviews.createdAt))
     .limit(50);
+
+  // Which of these reviews has the viewer reacted to?
+  const myReactionIds = new Set<number>();
+  if (viewerId && otherReviews.length > 0) {
+    const ids = otherReviews.map((r) => r.id);
+    const rows = await db
+      .select({ reviewId: reviewReactions.reviewId })
+      .from(reviewReactions)
+      .where(
+        and(
+          eq(reviewReactions.userId, viewerId),
+          sql`${reviewReactions.reviewId} = ANY(${ids})`
+        )
+      );
+    for (const row of rows) myReactionIds.add(row.reviewId);
+  }
 
   return (
     <div className="relative z-10 flex flex-col flex-1">
@@ -252,49 +271,17 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                   />
                 </div>
 
-                {/* Tablet/desktop: side-by-side surface + underground */}
-                <div
-                  className={`hidden sm:grid sm:gap-4 ${
-                    m.hasUnderground ? "sm:grid-cols-2" : ""
-                  }`}
-                >
-                  <div className="card-brass overflow-hidden rounded">
-                    <div className="border-b border-brass/40 bg-night-deep px-4 py-2 text-xs uppercase tracking-wider text-parchment/80">
-                      Surface
-                    </div>
-                    <div className="relative aspect-square w-full bg-night-deep">
-                      <Image
-                        src={m.previewKey}
-                        alt={`${m.name} — surface map`}
-                        fill
-                        sizes="(max-width: 1024px) 50vw, 33vw"
-                        className="object-contain pixelated"
-                        unoptimized
-                        priority
-                      />
-                    </div>
-                  </div>
-                  {m.hasUnderground && (
-                    <div className="card-brass overflow-hidden rounded">
-                      <div className="border-b border-brass/40 bg-night-deep px-4 py-2 text-xs uppercase tracking-wider text-parchment/80">
-                        Underground
-                      </div>
-                      <div className="relative aspect-square w-full bg-night-deep">
-                        <Image
-                          src={
-                            m.undergroundPreviewKey ??
-                            m.previewKey.replace("/img/", "/img_und/")
-                          }
-                          alt={`${m.name} — underground map`}
-                          fill
-                          sizes="(max-width: 1024px) 50vw, 33vw"
-                          className="object-contain pixelated"
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Tablet/desktop: side-by-side, click to zoom */}
+                <PreviewLightboxTrigger
+                  mapName={m.name}
+                  surfaceUrl={m.previewKey}
+                  undergroundUrl={
+                    m.hasUnderground
+                      ? m.undergroundPreviewKey ??
+                        m.previewKey.replace("/img/", "/img_und/")
+                      : null
+                  }
+                />
               </>
             ) : (
               <div className="card-brass aspect-square flex items-center justify-center rounded text-ink-soft">
@@ -418,6 +405,15 @@ export default async function MapDetailPage({ params }: { params: Params }) {
                           {r.body}
                         </p>
                       )}
+                      <div className="mt-2 flex items-center gap-2">
+                        <HelpfulButton
+                          reviewId={r.id}
+                          slug={m.slug}
+                          initialCount={r.helpfulCount}
+                          initialReacting={myReactionIds.has(r.id)}
+                          signedIn={!!viewerId}
+                        />
+                      </div>
                     </li>
                   ))}
                 </ul>

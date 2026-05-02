@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { reviews, maps } from "@/db/schema";
+import { reviews, reviewReactions, maps } from "@/db/schema";
 
 const MIN_BODY = 0; // body is optional
 const MAX_BODY = 4000;
@@ -62,6 +62,67 @@ export async function submitReview(
 
   revalidatePath(`/maps/${slug}`);
   return { ok: true };
+}
+
+/**
+ * Toggle the current user's "this helped" reaction on a review.
+ * Returns the new helpful count + whether the user is currently reacting.
+ */
+export async function toggleReviewHelpful(
+  reviewId: number,
+  slug: string
+): Promise<
+  | { ok: true; helpfulCount: number; reacting: boolean }
+  | { ok: false; error: string }
+> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) return { ok: false, error: "Sign in required." };
+
+  const result = await db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ reviewId: reviewReactions.reviewId })
+      .from(reviewReactions)
+      .where(
+        and(
+          eq(reviewReactions.reviewId, reviewId),
+          eq(reviewReactions.userId, userId)
+        )
+      )
+      .limit(1);
+
+    let reacting: boolean;
+    if (existing) {
+      await tx
+        .delete(reviewReactions)
+        .where(
+          and(
+            eq(reviewReactions.reviewId, reviewId),
+            eq(reviewReactions.userId, userId)
+          )
+        );
+      reacting = false;
+    } else {
+      await tx.insert(reviewReactions).values({ reviewId, userId });
+      reacting = true;
+    }
+
+    const [agg] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(reviewReactions)
+      .where(eq(reviewReactions.reviewId, reviewId));
+    const helpfulCount = agg.n;
+
+    await tx
+      .update(reviews)
+      .set({ helpfulCount })
+      .where(eq(reviews.id, reviewId));
+
+    return { helpfulCount, reacting };
+  });
+
+  revalidatePath(`/maps/${slug}`);
+  return { ok: true, ...result };
 }
 
 export async function deleteReview(

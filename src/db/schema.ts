@@ -287,6 +287,9 @@ export const reviews = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     rating: integer("rating").notNull(),
     body: text("body"),
+    /** Cached count of "this helped" reactions. Recomputed on every
+     * insert/delete in the reviewReactions table. */
+    helpfulCount: integer("helpful_count").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -294,6 +297,30 @@ export const reviews = pgTable(
   (t) => [
     uniqueIndex("reviews_map_user_unique").on(t.mapId, t.userId),
     index("reviews_map_idx").on(t.mapId),
+  ]
+);
+
+/**
+ * Per-(user, review) "this helped" reactions. Aggregated count is
+ * cached on `reviews.helpfulCount` so the detail page can sort/render
+ * without an extra join.
+ */
+export const reviewReactions = pgTable(
+  "review_reactions",
+  {
+    reviewId: integer("review_id")
+      .notNull()
+      .references(() => reviews.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.reviewId, t.userId] }),
+    index("review_reactions_review_idx").on(t.reviewId),
   ]
 );
 
