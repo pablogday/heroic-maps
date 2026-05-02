@@ -155,7 +155,8 @@ export function MapPreviewLightbox({
         </div>
       </div>
 
-      {/* Image canvas */}
+      {/* Image canvas — image fills the available space at scale=1
+          (object-contain), then user zoom scales from there. */}
       <div
         className="relative flex-1 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -170,9 +171,10 @@ export function MapPreviewLightbox({
         }}
       >
         <div
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute inset-0"
           style={{
             transform: `translate(${tx}px, ${ty}px) scale(${scale})`,
+            transformOrigin: "center center",
             transition: dragRef.current ? "none" : "transform 120ms ease-out",
           }}
         >
@@ -180,7 +182,7 @@ export function MapPreviewLightbox({
           <img
             src={current.url}
             alt={`${mapName} — ${current.label}`}
-            className="max-h-[85vh] max-w-[90vw] select-none pixelated"
+            className="absolute inset-0 m-auto h-full w-full select-none object-contain pixelated"
             draggable={false}
           />
         </div>
