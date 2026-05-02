@@ -237,8 +237,47 @@ export default async function MapDetailPage({ params }: { params: Params }) {
     for (const row of rows) myReactionIds.add(row.reviewId);
   }
 
+  // JSON-LD structured data — Google uses this for rich snippets
+  // (rating stars, review counts, image preview).
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://heroic-maps.vercel.app";
+  const avgRatingForLd =
+    m.ratingCount > 0 ? m.ratingSum / m.ratingCount : null;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: m.name,
+    description: m.description ?? undefined,
+    url: `${siteUrl}/maps/${m.slug}`,
+    image: m.previewKey ?? undefined,
+    genre: "Heroes of Might and Magic 3 map",
+    datePublished: m.publishedAt
+      ? new Date(m.publishedAt).toISOString()
+      : undefined,
+    inLanguage: "en",
+    aggregateRating:
+      avgRatingForLd !== null
+        ? {
+            "@type": "AggregateRating",
+            ratingValue: Number(avgRatingForLd.toFixed(2)),
+            ratingCount: m.ratingCount,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
+    interactionStatistic: {
+      "@type": "InteractionCounter",
+      interactionType: { "@type": "https://schema.org/DownloadAction" },
+      userInteractionCount: m.downloadCount,
+    },
+  };
+
   return (
     <div className="relative z-10 flex flex-col flex-1">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteHeader />
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
        <PageReveal>

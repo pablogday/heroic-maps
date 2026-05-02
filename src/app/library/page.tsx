@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { maps, userMaps, playSessions } from "@/db/schema";
@@ -30,7 +30,18 @@ const OUTCOME_COLOR = {
   abandoned: "text-ink-soft",
 };
 
-type SP = Promise<{ tab?: string }>;
+type Sort = "recent" | "oldest" | "name";
+const SORTS: { value: Sort; label: string }[] = [
+  { value: "recent", label: "Most recent" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "name", label: "Name (A–Z)" },
+];
+
+type SP = Promise<{ tab?: string; sort?: string }>;
+
+function parseSort(s: string | undefined): Sort {
+  return s === "oldest" || s === "name" ? s : "recent";
+}
 
 const cardCols = {
   id: maps.id,
@@ -65,10 +76,11 @@ export default async function LibraryPage({
   const sp = await searchParams;
   const tab: Tab =
     sp.tab === "bookmarks" || sp.tab === "played" ? sp.tab : "favorites";
+  const sort = parseSort(sp.sort);
 
   if (tab === "played") {
     return (
-      <PlayedTab userId={userId} activeTab={tab} />
+      <PlayedTab userId={userId} activeTab={tab} sort={sort} />
     );
   }
 
@@ -77,16 +89,23 @@ export default async function LibraryPage({
       ? and(eq(userMaps.userId, userId), eq(userMaps.favorited, true))
       : and(eq(userMaps.userId, userId), eq(userMaps.bookmarked, true));
 
+  const orderBy =
+    sort === "oldest"
+      ? asc(userMaps.updatedAt)
+      : sort === "name"
+        ? asc(maps.name)
+        : desc(userMaps.updatedAt);
+
   const rows = await db
     .select({ ...cardCols, bookmarked: userMaps.bookmarked })
     .from(userMaps)
     .innerJoin(maps, eq(userMaps.mapId, maps.id))
     .where(where)
-    .orderBy(desc(userMaps.updatedAt))
+    .orderBy(orderBy)
     .limit(60);
 
   return (
-    <Shell activeTab={tab}>
+    <Shell activeTab={tab} sort={sort}>
       {rows.length === 0 ? (
         <EmptyMessage tab={tab} />
       ) : (
@@ -108,9 +127,11 @@ export default async function LibraryPage({
 async function PlayedTab({
   userId,
   activeTab,
+  sort,
 }: {
   userId: string;
   activeTab: Tab;
+  sort: Sort;
 }) {
   // One row per distinct (user, map) — most-recent session wins for the
   // "last played" sort and badge.
@@ -118,6 +139,7 @@ async function PlayedTab({
     .select({
       mapId: playSessions.mapId,
       lastPlayed: sql<Date>`MAX(${playSessions.playedAt})`.as("last_played"),
+      firstPlayed: sql<Date>`MIN(${playSessions.playedAt})`.as("first_played"),
       lastOutcome:
         sql<string>`(ARRAY_AGG(${playSessions.outcome} ORDER BY ${playSessions.playedAt} DESC))[1]`.as(
           "last_outcome"
@@ -129,6 +151,13 @@ async function PlayedTab({
     .groupBy(playSessions.mapId)
     .as("recent_sessions");
 
+  const orderBy =
+    sort === "oldest"
+      ? asc(recencyByMap.firstPlayed)
+      : sort === "name"
+        ? asc(maps.name)
+        : desc(recencyByMap.lastPlayed);
+
   const rows = await db
     .select({
       ...cardCols,
@@ -138,11 +167,11 @@ async function PlayedTab({
     })
     .from(recencyByMap)
     .innerJoin(maps, eq(recencyByMap.mapId, maps.id))
-    .orderBy(desc(recencyByMap.lastPlayed))
+    .orderBy(orderBy)
     .limit(60);
 
   return (
-    <Shell activeTab={activeTab}>
+    <Shell activeTab={activeTab} sort={sort}>
       {rows.length === 0 ? (
         <EmptyMessage tab={activeTab} />
       ) : (
@@ -174,9 +203,11 @@ async function PlayedTab({
 
 function Shell({
   activeTab,
+  sort,
   children,
 }: {
   activeTab: Tab;
+  sort: Sort;
   children: React.ReactNode;
 }) {
   return (
@@ -191,29 +222,48 @@ function Shell({
             </p>
           </div>
 
-          <nav
-            className="mb-6 flex gap-2 border-b border-brass/40"
-            aria-label="Library tabs"
-          >
-            {TABS.map((t) => {
-              const active = t.value === activeTab;
-              return (
-                <Link
-                  key={t.value}
-                  href={`/library?tab=${t.value}`}
-                  aria-current={active ? "page" : undefined}
-                  className={`-mb-px rounded-t border border-b-0 px-4 py-2 text-sm font-display transition-colors ${
-                    active
-                      ? "border-brass bg-parchment text-ink"
-                      : "border-transparent text-ink-soft hover:text-ink"
-                  }`}
-                >
-                  <span className="mr-1.5">{t.emoji}</span>
-                  {t.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-brass/40">
+            <nav className="flex gap-2" aria-label="Library tabs">
+              {TABS.map((t) => {
+                const active = t.value === activeTab;
+                return (
+                  <Link
+                    key={t.value}
+                    href={`/library?tab=${t.value}`}
+                    aria-current={active ? "page" : undefined}
+                    className={`-mb-px rounded-t border border-b-0 px-4 py-2 text-sm font-display transition-colors ${
+                      active
+                        ? "border-brass bg-parchment text-ink"
+                        : "border-transparent text-ink-soft hover:text-ink"
+                    }`}
+                  >
+                    <span className="mr-1.5">{t.emoji}</span>
+                    {t.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="mb-2 flex items-center gap-2 text-sm">
+              <span className="text-xs text-ink-soft">Sort:</span>
+              {SORTS.map((s) => {
+                const active = s.value === sort;
+                return (
+                  <Link
+                    key={s.value}
+                    href={`/library?tab=${activeTab}&sort=${s.value}`}
+                    aria-current={active ? "true" : undefined}
+                    className={`rounded border px-2 py-0.5 text-xs transition-colors ${
+                      active
+                        ? "border-brass bg-brass/15 text-ink"
+                        : "border-brass/40 text-ink-soft hover:bg-brass/15 hover:text-ink"
+                    }`}
+                  >
+                    {s.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
 
           {children}
         </PageReveal>

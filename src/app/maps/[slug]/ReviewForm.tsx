@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { submitReview, deleteReview } from "@/app/actions/reviews";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 export function ReviewForm({
   mapId,
@@ -38,9 +39,15 @@ export function ReviewForm({
     });
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!reviewId) return;
-    if (!confirm("Delete your review?")) return;
+    const ok = await confirmDialog({
+      title: "Delete your review?",
+      body: "This removes your rating and any text you wrote.",
+      confirmLabel: "Delete review",
+      variant: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const res = await deleteReview(reviewId, mapId, slug);
       if (!res.ok) setError(res.error);

@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews } from "@/db/schema";
+import { maps, reviews, users } from "@/db/schema";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
@@ -57,6 +58,25 @@ export default async function StatsPage() {
   const [reviewAgg] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(reviews);
+
+  // Top reviewers in the last 30 days by review count, with avg rating
+  // they handed out as a tie-breaker / context.
+  const topReviewers = await db
+    .select({
+      userId: users.id,
+      username: users.username,
+      name: users.name,
+      avatar: users.avatarUrl,
+      image: users.image,
+      reviewCount: sql<number>`count(${reviews.id})::int`,
+      avgRating: sql<number>`avg(${reviews.rating})::float`,
+    })
+    .from(reviews)
+    .innerJoin(users, sql`${users.id} = ${reviews.userId}`)
+    .where(sql`${reviews.createdAt} > now() - interval '30 days'`)
+    .groupBy(users.id, users.username, users.name, users.avatarUrl, users.image)
+    .orderBy(sql`count(${reviews.id}) desc`)
+    .limit(10);
 
   const h = headline[0];
 
@@ -185,6 +205,64 @@ export default async function StatsPage() {
             })}
           </ul>
         </section>
+
+        {topReviewers.length > 0 && (
+          <section className="card-brass mb-10 rounded p-6">
+            <div className="mb-4 flex items-baseline justify-between">
+              <h2 className="font-display text-xl text-ink">
+                Reviewer leaderboard
+              </h2>
+              <span className="text-xs text-ink-soft">
+                Most reviews in the last 30 days
+              </span>
+            </div>
+            <ol className="space-y-2">
+              {topReviewers.map((r, i) => {
+                const display = r.name ?? r.username ?? "Anonymous";
+                const avatar = r.avatar ?? r.image;
+                const medal =
+                  i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : null;
+                const inner = (
+                  <div className="flex items-center gap-3 rounded p-2 hover:bg-brass/10">
+                    <div className="w-6 text-center font-display text-sm text-ink-soft">
+                      {medal ?? `#${i + 1}`}
+                    </div>
+                    {avatar ? (
+                      <Image
+                        src={avatar}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="h-7 w-7 rounded-full border border-brass/40"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="h-7 w-7 rounded-full bg-brass/30" />
+                    )}
+                    <span className="flex-1 text-sm font-medium text-ink">
+                      {display}
+                    </span>
+                    <span className="text-xs text-ink-soft">
+                      {r.reviewCount} review{r.reviewCount === 1 ? "" : "s"} ·
+                      avg {r.avgRating.toFixed(1)}★
+                    </span>
+                  </div>
+                );
+                return (
+                  <li key={r.userId}>
+                    {r.username ? (
+                      <Link href={`/${r.username}`} className="block">
+                        {inner}
+                      </Link>
+                    ) : (
+                      inner
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )}
 
         <p className="text-center text-xs text-ink-soft">
           Average map: {h.avgPlayers.toFixed(1)} players · numbers refresh on

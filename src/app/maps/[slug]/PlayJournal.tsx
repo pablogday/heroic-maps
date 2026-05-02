@@ -9,6 +9,7 @@ import {
   type PlayedOutcome,
 } from "@/app/actions/playSessions";
 import { FACTIONS, FACTION_LABEL, type Faction } from "@/lib/factions";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 export interface JournalSession {
   id: number;
@@ -151,8 +152,14 @@ export function PlayJournal({
     });
   };
 
-  const remove = (id: number) => {
-    if (!confirm("Delete this playthrough?")) return;
+  const remove = async (id: number) => {
+    const ok = await confirmDialog({
+      title: "Delete this playthrough?",
+      body: "It'll disappear from your history and the map's stats.",
+      confirmLabel: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const res = await deletePlaySession(id, slug);
       if (!res.ok) return;

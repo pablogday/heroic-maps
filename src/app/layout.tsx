@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import { BootSplash } from "@/components/BootSplash";
 import { Toaster } from "@/components/Toaster";
+import { ConfirmHost } from "@/components/ConfirmDialog";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -73,6 +74,7 @@ export default function RootLayout({
         />
         <BootSplash />
         <Toaster />
+        <ConfirmHost />
         {children}
       </body>
     </html>
