@@ -20,6 +20,8 @@ export type MapFilters = {
   players?: number;
   faction?: Faction;
   difficulty?: Difficulty;
+  /** True = only underground maps; false = only surface-only; undefined = either. */
+  hasUnderground?: boolean;
   sort?: Sort;
   page?: number;
 };
@@ -95,6 +97,9 @@ export async function listMaps(f: MapFilters, viewerId: string | null = null) {
   }
   if (f.difficulty) {
     where.push(eq(maps.difficulty, f.difficulty));
+  }
+  if (f.hasUnderground !== undefined) {
+    where.push(eq(maps.hasUnderground, f.hasUnderground));
   }
 
   const orderBy = (() => {

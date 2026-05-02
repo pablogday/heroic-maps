@@ -33,6 +33,7 @@ type SP = Promise<{
   players?: string;
   faction?: string;
   difficulty?: string;
+  underground?: string;
   sort?: string;
   page?: string;
   view?: string;
@@ -59,6 +60,12 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
     players: sp.players ? Number(sp.players) || undefined : undefined,
     faction: isFaction(sp.faction) ? sp.faction : undefined,
     difficulty: isDifficulty(sp.difficulty) ? sp.difficulty : undefined,
+    hasUnderground:
+      sp.underground === "yes"
+        ? true
+        : sp.underground === "no"
+          ? false
+          : undefined,
     sort: isSort(sp.sort) ? sp.sort : ("downloads" as const),
     page: sp.page ? Number(sp.page) || 1 : 1,
   };

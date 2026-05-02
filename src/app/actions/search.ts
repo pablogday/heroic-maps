@@ -32,6 +32,12 @@ const SmartFilters = z.object({
     .describe(
       "Total number of human-playable slots the user wants. Null when unspecified."
     ),
+  underground: z
+    .enum(["yes", "no"])
+    .nullable()
+    .describe(
+      "Set to 'no' when the user explicitly wants surface-only maps (e.g. 'no underground', 'surface only', 'one level'). Set to 'yes' when they want only two-level maps. Null when unspecified."
+    ),
   sort: z
     .enum(["popular", "rating", "newest", "name"])
     .nullable()
@@ -66,6 +72,8 @@ Factions: castle, rampart, tower, inferno, necropolis, dungeon, stronghold, fort
 Difficulty: easy, normal, hard, expert, impossible.
 
 Players: 1–8 (the total number of human-playable slots).
+
+Underground: "yes" = only two-level maps with an underground; "no" = surface-only (no underground / one level / above ground only). Null when the user doesn't mention it.
 
 Sort options: popular | rating | newest | name. Default: popular.
 
@@ -135,6 +143,7 @@ export async function smartSearch(
   if (parsed.faction) params.set("faction", parsed.faction);
   if (parsed.difficulty) params.set("difficulty", parsed.difficulty);
   if (parsed.players != null) params.set("players", String(parsed.players));
+  if (parsed.underground) params.set("underground", parsed.underground);
   if (parsed.sort) params.set("sort", parsed.sort);
 
   return {
