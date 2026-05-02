@@ -71,6 +71,8 @@ async function main() {
     const victoryHistogram = new Map<string, number>();
     const lossHistogram = new Map<string, number>();
     const playerCountHistogram = new Map<number, number>();
+    let terrainReached = 0;
+    let highParsed = 0;
     let processed = 0;
 
     const limit = pLimit(args.concurrency);
@@ -115,6 +117,8 @@ async function main() {
               (playerCountHistogram.get(result.totalPlayers) ?? 0) + 1
             );
           }
+          if (result.confidence === "high") highParsed++;
+          if (result.terrainOffset !== null) terrainReached++;
 
           if (result.confidence === "failed" && result.error) {
             const list =
@@ -128,13 +132,19 @@ async function main() {
             console.log(
               `${row.id.toString().padStart(5)} ${row.version.padEnd(10)} → ${
                 result.format.padEnd(10)
-              } ${result.confidence}${
-                result.error ? ` (${result.error})` : ""
-              }`
+              } ${result.confidence} ${
+                result.terrainOffset !== null ? `T@${result.terrainOffset}` : "T:miss"
+              }${result.error ? ` (${result.error})` : ""}`
             );
           }
         })
       )
+    );
+
+    console.log(
+      `\nTerrain reached: ${terrainReached} / ${highParsed} high-parsed (${
+        highParsed === 0 ? 0 : ((100 * terrainReached) / highParsed).toFixed(1)
+      }%)`
     );
 
     console.log(`\n=== By DB version (what we labeled the map) ===`);
@@ -192,6 +202,7 @@ async function fetchAndParse(
   victoryType: string | null;
   lossType: string | null;
   totalPlayers: number | null;
+  terrainOffset: number | null;
 }> {
   try {
     const res = await fetch(url);
@@ -203,6 +214,7 @@ async function fetchAndParse(
         victoryType: null,
         lossType: null,
         totalPlayers: null,
+        terrainOffset: null,
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
@@ -215,6 +227,7 @@ async function fetchAndParse(
         victoryType: null,
         lossType: null,
         totalPlayers: null,
+        terrainOffset: null,
       };
     }
     const r = parseH3m(Buffer.from(unwrapped.bytes));
@@ -225,6 +238,7 @@ async function fetchAndParse(
       victoryType: r.victory?.type ?? null,
       lossType: r.loss?.type ?? null,
       totalPlayers: r.totalPlayers,
+      terrainOffset: r.terrainOffset,
     };
   } catch (e) {
     return {

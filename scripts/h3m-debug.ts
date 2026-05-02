@@ -101,6 +101,21 @@ async function main() {
     if (parsed.factions) console.log(`  factions     ${parsed.factions.join(", ")}`);
     if (parsed.victory) console.log(`  victory      ${parsed.victory.description}`);
     if (parsed.loss) console.log(`  loss         ${parsed.loss.description}`);
+    if (parsed.terrainOffset !== null && parsed.header) {
+      console.log(`  terrainAt    byte ${parsed.terrainOffset}`);
+      // Sniff first row of terrain — terrain types are 0..9, river/road
+      // bytes 0..3, variant bytes 0..23. Sane terrain looks like small
+      // ints with a tile size of ~7 bytes.
+      const row = raw.subarray(
+        parsed.terrainOffset,
+        parsed.terrainOffset + parsed.header.width * 7
+      );
+      const tiles: string[] = [];
+      for (let i = 0; i < row.length && tiles.length < 8; i += 7) {
+        tiles.push(`[t=${row[i]} riv=${row[i + 1]} road=${row[i + 2]}]`);
+      }
+      console.log(`  first tiles  ${tiles.join(" ")}`);
+    }
   } finally {
     await sql.end();
   }

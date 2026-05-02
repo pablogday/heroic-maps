@@ -36,6 +36,7 @@ import {
   type LossCondition,
 } from "./conditions";
 import { parseHotaPrefix } from "./hota";
+import { walkToTerrain } from "./worldData";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -56,6 +57,10 @@ export interface ParseResult {
   /** Faction codes (our project's enum) playable across all enabled
    * slots; union of each slot's allowedFactions bitmask. */
   factions: string[] | null;
+  /** Byte offset of the terrain layer in the decompressed stream,
+   * if the parser walked there successfully. Null when we didn't
+   * try (HotA/WoG path) or the walk failed. */
+  terrainOffset: number | null;
   warnings: string[];
   /** Filled if confidence=failed. */
   error: string | null;
@@ -169,6 +174,21 @@ export function parseH3m(input: Uint8Array): ParseResult {
     : { totalPlayers: null, humanPlayers: null, aiPlayers: null };
   const factions = players ? summarizeFactions(players) : null;
 
+  // Walk past everything between conditions and terrain so we know
+  // where the terrain layer starts. HotA/WoG use the same layout as
+  // SoD here (player blocks were the same too, empirically).
+  let terrainOffset: number | null = null;
+  if (players && victory && loss) {
+    const walkFormat =
+      HOTA_FORMATS.has(format) || format === "WoG" ? "SoD" : format;
+    try {
+      walkToTerrain(reader, walkFormat);
+      terrainOffset = reader.offset;
+    } catch {
+      // Diagnostic only — surfaces via terrainOffset === null.
+    }
+  }
+
   return {
     confidence: confidenceFor(warnings, players, victory, loss),
     format,
@@ -182,6 +202,7 @@ export function parseH3m(input: Uint8Array): ParseResult {
     victory,
     loss,
     factions,
+    terrainOffset,
     warnings,
     error: null,
   };
@@ -211,6 +232,7 @@ function emptyResult(format: FormatId, versionMagic: number): ParseResult {
     victory: null,
     loss: null,
     factions: null,
+    terrainOffset: null,
     warnings: [],
     error: null,
   };
