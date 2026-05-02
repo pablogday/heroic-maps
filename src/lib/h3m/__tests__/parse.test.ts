@@ -104,18 +104,17 @@ describe("parseH3m — SoD synthetic header", () => {
     assert.equal(res.header!.difficulty, "easy");
   });
 
-  it("returns 'partial' on unknown width", () => {
+  it("rounds non-standard widths to the nearest standard size", () => {
     const raw = buildSoDHeader({
-      width: 99,
+      width: 99, // closer to L (108) than to M (72)
       hasUnderground: false,
       name: "Weird",
       description: "",
       difficulty: 1,
     });
     const res = parseH3m(raw);
-    assert.equal(res.confidence, "partial");
-    assert.equal(res.header!.size, null);
-    assert.ok(res.warnings.some((w) => w.includes("99")));
+    assert.equal(res.header!.size, "L");
+    assert.equal(res.header!.width, 99);
   });
 
   it("fails cleanly on unknown version magic", () => {

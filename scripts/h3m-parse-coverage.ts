@@ -73,6 +73,9 @@ async function main() {
     const playerCountHistogram = new Map<number, number>();
     let terrainReached = 0;
     let terrainPlausible = 0;
+    let objectsFullyParsed = 0;
+    let objectsPartial = 0;
+    const unsupportedClasses = new Map<string, number>();
     let highParsed = 0;
     let processed = 0;
 
@@ -121,6 +124,19 @@ async function main() {
           if (result.confidence === "high") highParsed++;
           if (result.terrainOffset !== null) terrainReached++;
           if (result.terrainPlausible) terrainPlausible++;
+          if (result.objectsFullyParsed) objectsFullyParsed++;
+          else if (result.objectsPartial) objectsPartial++;
+          if (result.objectFailReason) {
+            const m = result.objectFailReason.match(
+              /unsupported object class (\d+)/
+            );
+            if (m) {
+              unsupportedClasses.set(
+                m[1],
+                (unsupportedClasses.get(m[1]) ?? 0) + 1
+              );
+            }
+          }
 
           if (result.confidence === "failed" && result.error) {
             const list =
@@ -155,6 +171,25 @@ async function main() {
           : ((100 * terrainPlausible) / terrainReached).toFixed(1)
       }%) — terrain ids all in known range`
     );
+    console.log(
+      `Objects fully:      ${objectsFullyParsed} / ${terrainReached} reached (${
+        terrainReached === 0
+          ? 0
+          : ((100 * objectsFullyParsed) / terrainReached).toFixed(1)
+      }%)`
+    );
+    console.log(
+      `Objects partial:    ${objectsPartial} (walked some, then hit unsupported class)`
+    );
+    if (unsupportedClasses.size > 0) {
+      console.log(`\nTop unsupported object classes (extend objects.ts to lift):`);
+      const top = [...unsupportedClasses.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12);
+      for (const [cls, n] of top) {
+        console.log(`  class ${cls.padStart(3)} → ${n} maps blocked`);
+      }
+    }
 
     console.log(`\n=== By DB version (what we labeled the map) ===`);
     printTable(byDbVersion);
@@ -213,6 +248,9 @@ async function fetchAndParse(
   totalPlayers: number | null;
   terrainOffset: number | null;
   terrainPlausible: boolean;
+  objectsFullyParsed: boolean;
+  objectsPartial: boolean;
+  objectFailReason: string | null;
 }> {
   try {
     const res = await fetch(url);
@@ -226,6 +264,9 @@ async function fetchAndParse(
         totalPlayers: null,
         terrainOffset: null,
         terrainPlausible: false,
+        objectsFullyParsed: false,
+        objectsPartial: false,
+        objectFailReason: null,
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
@@ -240,6 +281,9 @@ async function fetchAndParse(
         totalPlayers: null,
         terrainOffset: null,
         terrainPlausible: false,
+        objectsFullyParsed: false,
+        objectsPartial: false,
+        objectFailReason: null,
       };
     }
     const r = parseH3m(Buffer.from(unwrapped.bytes));
@@ -248,6 +292,10 @@ async function fetchAndParse(
       terrainPlausibility(r.terrain.surface) < 0.01 &&
       (r.terrain.underground === null ||
         terrainPlausibility(r.terrain.underground) < 0.01);
+    const objectsFullyParsed =
+      r.objects !== null && r.objects.failedAtInstance === undefined;
+    const objectsPartial =
+      r.objects !== null && r.objects.failedAtInstance !== undefined;
     return {
       format: r.format,
       confidence: r.confidence,
@@ -257,6 +305,9 @@ async function fetchAndParse(
       totalPlayers: r.totalPlayers,
       terrainOffset: r.terrainOffset,
       terrainPlausible: plausible,
+      objectsFullyParsed,
+      objectsPartial,
+      objectFailReason: r.objects?.failedReason ?? null,
     };
   } catch (e) {
     return {
@@ -268,6 +319,9 @@ async function fetchAndParse(
       totalPlayers: null,
       terrainOffset: null,
       terrainPlausible: false,
+      objectsFullyParsed: false,
+      objectsPartial: false,
+      objectFailReason: null,
     };
   }
 }

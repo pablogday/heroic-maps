@@ -38,6 +38,7 @@ import {
 import { parseHotaPrefix } from "./hota";
 import { walkToTerrain } from "./worldData";
 import { parseTerrain, type Terrain } from "./terrain";
+import { parseObjects, type ObjectsParseResult } from "./objects";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -65,6 +66,10 @@ export interface ParseResult {
   /** Parsed terrain grid (surface + optional underground). Null when
    * `terrainOffset` is null. */
   terrain: Terrain | null;
+  /** Object templates + instances placed on the map. Best-effort:
+   * `instances` may be a partial list with `failedAtInstance` set if
+   * we hit an unsupported object class. */
+  objects: ObjectsParseResult | null;
   warnings: string[];
   /** Filled if confidence=failed. */
   error: string | null;
@@ -217,6 +222,22 @@ export function parseH3m(input: Uint8Array): ParseResult {
     }
   }
 
+  let objects: ObjectsParseResult | null = null;
+  if (terrain) {
+    const objFormat: "RoE" | "AB" | "SoD" =
+      HOTA_FORMATS.has(format) || format === "WoG"
+        ? "SoD"
+        : format === "RoE" || format === "AB"
+          ? format
+          : "SoD";
+    try {
+      objects = parseObjects(reader, objFormat);
+    } catch {
+      // Walk failed entirely — extremely rare since parseObjects has
+      // its own try/catch around the instance loop.
+    }
+  }
+
   return {
     confidence: confidenceFor(warnings, players, victory, loss),
     format,
@@ -232,6 +253,7 @@ export function parseH3m(input: Uint8Array): ParseResult {
     factions,
     terrainOffset,
     terrain,
+    objects,
     warnings,
     error: null,
   };
@@ -263,6 +285,7 @@ function emptyResult(format: FormatId, versionMagic: number): ParseResult {
     factions: null,
     terrainOffset: null,
     terrain: null,
+    objects: null,
     warnings: [],
     error: null,
   };
@@ -286,6 +309,12 @@ export type { PlayerSlot } from "./playerInfo";
 export type { VictoryCondition, LossCondition } from "./conditions";
 export type { Terrain, Tile } from "./terrain";
 export { TERRAIN_NAMES, terrainPlausibility } from "./terrain";
+export type {
+  ObjectTemplate,
+  MapObjectInstance,
+  ObjectsParseResult,
+} from "./objects";
+export { objectClassName } from "./objectClasses";
 export { renderMinimap, TERRAIN_COLOR } from "./render";
 export type { MinimapImage, RenderOptions } from "./render";
 export { unwrapMapFile } from "./unwrap";
