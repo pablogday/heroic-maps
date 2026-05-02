@@ -129,6 +129,19 @@ export function parseH3m(input: Uint8Array): ParseResult {
         error: `HotA prefix: ${errMsg(e)}`,
       };
     }
+    // Sanity check: the next byte must be the basic header's
+    // areAnyPlayers bool — i.e. 0 or 1. Anything else means our
+    // prefix walker misaligned and we should bail rather than parse
+    // garbage that happens not to throw.
+    if (reader.remaining() > 0) {
+      const peek = reader.buf[reader.offset];
+      if (peek !== 0 && peek !== 1) {
+        return {
+          ...emptyResult(format, versionMagic),
+          error: `HotA prefix mis-aligned: next byte 0x${peek.toString(16)} is not a valid areAnyPlayers bool (expected 0 or 1)`,
+        };
+      }
+    }
   }
 
   let header: BasicHeader;

@@ -51,6 +51,27 @@ Two layers of safety on the data:
 
 `backups/` is gitignored — snapshots stay local, never committed.
 
+## .h3m parser regression testing
+
+The parser at `src/lib/h3m/` has unit tests under `__tests__/` (run via
+`npm test`), but the real regression coverage comes from running the
+parser against the actual corpus:
+
+  - `npm run h3m:coverage` — parses every map in R2, reports per-format
+    high/partial/failed counts, terrain reach + plausibility, and
+    histograms of victory/loss conditions. Any structural bug shows up
+    as either a coverage drop or a chaotic distribution.
+  - `npm run h3m:validate` — compares parser output vs. DB ground truth
+    for name/size/players/factions/etc. per-field disagreement rates.
+  - `npm run h3m:debug -- <slug-or-id>` — hex-dumps a single map and
+    shows what the parser extracted, for reverse-engineering edge cases.
+  - `npm run h3m:walk-trace -- --id=<n>` — traces section-by-section
+    cursor positions through `walkToTerrain`, for finding where a
+    specific map's walk misaligns.
+
+**Run `h3m:coverage` after any parser change.** Don't merge a regression
+unless it's a deliberate trade-off documented in the commit message.
+
 ## Lookup tables (versions, sizes, difficulties)
 
 Three lookup tables hold the canonical full-name labels for the enum'd

@@ -2,26 +2,38 @@ import { BinaryReader } from "./reader";
 import type { FormatId } from "./versions";
 import { isSoDFamily } from "./versions";
 
-/** Map width in tiles → our `mapSizeEnum` code. */
+/** Standard HoMM3 widths in ascending order, paired with our enum. */
+const STANDARD_SIZES: Array<[number, SizeCode]> = [
+  [36, "S"],
+  [72, "M"],
+  [108, "L"],
+  [144, "XL"],
+  [180, "H"], // HotA "Huge"
+  [216, "XH"], // HotA "Extra Huge"
+  [252, "G"], // HotA "Giant"
+];
+
+/**
+ * Map width → size code. Exact matches first; otherwise rounds to the
+ * nearest standard size (some community / random-generator maps use
+ * non-standard widths like 18, 90, 256).
+ */
 function sizeFromWidth(width: number): SizeCode | null {
-  switch (width) {
-    case 36:
-      return "S";
-    case 72:
-      return "M";
-    case 108:
-      return "L";
-    case 144:
-      return "XL";
-    case 180:
-      return "H"; // HotA "Huge"
-    case 216:
-      return "XH"; // HotA "Extra Huge"
-    case 252:
-      return "G"; // HotA "Giant"
-    default:
-      return null;
+  if (width <= 0) return null;
+  for (const [w, code] of STANDARD_SIZES) {
+    if (w === width) return code;
   }
+  // Round to nearest standard size.
+  let best = STANDARD_SIZES[0];
+  let bestDiff = Math.abs(width - best[0]);
+  for (const candidate of STANDARD_SIZES) {
+    const diff = Math.abs(width - candidate[0]);
+    if (diff < bestDiff) {
+      best = candidate;
+      bestDiff = diff;
+    }
+  }
+  return best[1];
 }
 
 export type SizeCode = "S" | "M" | "L" | "XL" | "H" | "XH" | "G";

@@ -42,19 +42,56 @@ const ALLOWED_ARTIFACTS_BYTES = {
 
 type SimpleFormat = "RoE" | "AB" | "SoD";
 
+export type WalkTrace = Array<{
+  section: string;
+  startOffset: number;
+  endOffset: number;
+  detail?: string;
+}>;
+
 export function walkToTerrain(
   reader: BinaryReader,
-  format: SimpleFormat
+  format: SimpleFormat,
+  trace?: WalkTrace
 ): void {
-  parseTeamInfo(reader);
-  parseAllowedHeroes(reader, format);
-  parsePlaceholderHeroes(reader, format);
-  parseDisposedHeroes(reader, format);
-  reader.skip(31); // reserved
-  parseAllowedArtifacts(reader, format);
-  parseAllowedSpellsAndAbilities(reader, format);
-  parseRumors(reader);
-  parsePredefinedHeroes(reader, format);
+  step(reader, "teamInfo", trace, () => parseTeamInfo(reader));
+  step(reader, "allowedHeroes", trace, () => parseAllowedHeroes(reader, format));
+  step(reader, "placeholderHeroes", trace, () => parsePlaceholderHeroes(reader, format));
+  step(reader, "disposedHeroes", trace, () => parseDisposedHeroes(reader, format));
+  step(reader, "reserved", trace, () => reader.skip(31));
+  step(reader, "allowedArtifacts", trace, () => parseAllowedArtifacts(reader, format));
+  step(reader, "allowedSpellsAndAbilities", trace, () => parseAllowedSpellsAndAbilities(reader, format));
+  step(reader, "rumors", trace, () => parseRumors(reader));
+  step(reader, "predefinedHeroes", trace, () => parsePredefinedHeroes(reader, format));
+}
+
+function step(
+  reader: BinaryReader,
+  name: string,
+  trace: WalkTrace | undefined,
+  fn: () => void
+): void {
+  const start = reader.offset;
+  try {
+    fn();
+  } catch (e) {
+    if (trace) {
+      trace.push({
+        section: name,
+        startOffset: start,
+        endOffset: reader.offset,
+        detail: `THREW: ${e instanceof Error ? e.message : String(e)}`,
+      });
+    }
+    throw e;
+  }
+  if (trace) {
+    trace.push({
+      section: name,
+      startOffset: start,
+      endOffset: reader.offset,
+    });
+  }
 }
 
 function parseTeamInfo(reader: BinaryReader): void {
@@ -159,19 +196,18 @@ function parseOnePredefinedHero(
 }
 
 /**
- * Hero artifact slots: 16 equipment slots (head/neck/shoulders/torso/etc)
- * + 1 spellbook + 1 misc5 (SoD only) + variable-length backpack
- * terminated by an 0xffff sentinel. Each artifact id is u8 (RoE) or
- * u16 (AB+).
+ * Hero artifact slots: 13 body slots + 4 war machine slots + 1
+ * spellbook + (SoD only) 1 misc5 = 18 for AB/RoE, 19 for SoD.
+ * Then a u16-prefixed backpack of variable length. Each artifact id
+ * is u8 (RoE) or u16 (AB+).
  */
 function parseHeroArtifacts(
   reader: BinaryReader,
   format: SimpleFormat
 ): void {
   const idBytes = format === "RoE" ? 1 : 2;
-  const fixedSlots = format === "SoD" ? 18 : 17; // SoD added misc5
+  const fixedSlots = format === "SoD" ? 19 : 18;
   reader.skip(fixedSlots * idBytes);
-  // Backpack: u16le count, then count * idBytes
   const backpackCount = reader.u16le();
   reader.skip(backpackCount * idBytes);
 }
