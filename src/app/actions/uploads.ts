@@ -10,6 +10,13 @@ import { maps } from "@/db/schema";
 import { r2Put, r2PublicUrl } from "@/lib/r2";
 import { FACTIONS } from "@/lib/factions";
 import { VERSIONS, SIZES, DIFFICULTIES } from "@/lib/map-constants";
+import {
+  parseH3m,
+  unwrapMapFile,
+  renderMinimap,
+  type Terrain,
+} from "@/lib/h3m";
+import sharp from "sharp";
 
 const MAX_FILE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_EXT = ["h3m", "h3c", "zip"] as const;
@@ -100,6 +107,14 @@ export async function uploadMap(formData: FormData): Promise<UploadResult> {
     return { ok: false, error: "Storage upload failed. Try again." };
   }
 
+  // Best-effort: render minimap from the parsed terrain and upload
+  // alongside the .h3m. If anything fails we still create the map row
+  // — the upload itself is the user's intent, the preview is gravy.
+  const previews = await maybeRenderPreviews(buf, slug).catch((e) => {
+    console.error("uploadMap: minimap render failed", e);
+    return null;
+  });
+
   await db.insert(maps).values({
     slug,
     name: data.name,
@@ -115,12 +130,59 @@ export async function uploadMap(formData: FormData): Promise<UploadResult> {
     fileSize: file.size,
     uploaderId: userId,
     factions: data.factions && data.factions.length > 0 ? data.factions : null,
+    previewKey: previews?.surfaceUrl ?? null,
+    undergroundPreviewKey: previews?.undergroundUrl ?? null,
     publishedAt: new Date(),
   });
 
   revalidatePath("/maps");
   revalidatePath("/feed");
   redirect(`/maps/${slug}`);
+}
+
+/**
+ * Parse the uploaded file and, if a terrain layer is recovered,
+ * render surface + underground minimaps and upload them to R2.
+ * Returns the public URLs to store in the maps row, or null if the
+ * file couldn't be parsed deeply enough to render.
+ */
+async function maybeRenderPreviews(
+  raw: Buffer,
+  slug: string
+): Promise<{
+  surfaceUrl: string;
+  undergroundUrl: string | null;
+} | null> {
+  const unwrapped = unwrapMapFile(new Uint8Array(raw));
+  if (!unwrapped.ok) return null;
+  const parsed = parseH3m(unwrapped.bytes);
+  if (!parsed.terrain) return null;
+
+  const surfaceKey = `previews/uploaded/${slug}.png`;
+  await r2Put(
+    surfaceKey,
+    await encodePng(parsed.terrain, false),
+    "image/png"
+  );
+  let undergroundUrl: string | null = null;
+  if (parsed.terrain.underground) {
+    const undKey = `previews/uploaded/${slug}_und.png`;
+    await r2Put(undKey, await encodePng(parsed.terrain, true), "image/png");
+    undergroundUrl = r2PublicUrl(undKey);
+  }
+  return { surfaceUrl: r2PublicUrl(surfaceKey), undergroundUrl };
+}
+
+async function encodePng(
+  terrain: Terrain,
+  underground: boolean
+): Promise<Buffer> {
+  const img = renderMinimap(terrain, { tileSize: 4, underground });
+  return sharp(Buffer.from(img.pixels.buffer), {
+    raw: { width: img.width, height: img.height, channels: 4 },
+  })
+    .png({ compressionLevel: 9 })
+    .toBuffer();
 }
 
 function slugify(input: string): string {
