@@ -394,6 +394,32 @@ export default async function MapDetailPage({ params }: { params: Params }) {
               hasUnderground={m.hasUnderground}
             />
 
+            {(m.victoryCondition || m.lossCondition) && (
+              <div className="card-brass rounded p-5">
+                <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
+                  Conditions
+                </h3>
+                <dl className="space-y-2 text-sm">
+                  {m.victoryCondition && (
+                    <div>
+                      <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
+                        Victory
+                      </dt>
+                      <dd className="text-ink">{m.victoryCondition}</dd>
+                    </div>
+                  )}
+                  {m.lossCondition && (
+                    <div>
+                      <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
+                        Loss
+                      </dt>
+                      <dd className="text-ink">{m.lossCondition}</dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
+            )}
+
             {m.factions && m.factions.length > 0 && (
               <div className="card-brass rounded p-5">
                 <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">

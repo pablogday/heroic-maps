@@ -13,7 +13,7 @@ _(nothing active)_
   - [x] **v0.1** — SoD/AB/RoE basic header (size, name, description, difficulty); test scaffolding; coverage script
   - [x] **v0.2** — player blocks (counts, AI/human flags); win/loss conditions
   - [x] **v0.5** — universal (Node + browser) parser; auto-fill on file select in `/upload`, including factions from allowedFactions bitmask
-  - [ ] **v0.6** — backfill script: write parsed win/loss conditions into the DB **(active)**
+  - [x] **v0.6** — backfill script wrote victory + loss conditions for 1586 maps; rendered as a "Conditions" card on map detail page
   - [ ] **v0.3** — HotA family. **Status:** prefix between version magic and basic header varies per map (10–29 bytes observed across sample), conditional on a `subRevision` field. Reverse-engineering from bytes alone is risky; needs proper reference docs (HotA team source or community spec) before we ship code. Debug tool ready at `npm run h3m:debug -- <slug-or-id>`.
   - [ ] **v0.4** — WoG, Chronicles
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
