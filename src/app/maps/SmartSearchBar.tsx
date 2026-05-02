@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { smartSearch } from "@/app/actions/search";
 
@@ -16,6 +16,20 @@ export function SmartSearchBar({ initialError }: { initialError?: string }) {
   const [q, setQ] = useState("");
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [pending, startTransition] = useTransition();
+
+  // Toggle a body data-attribute so anything tagged with
+  // `data-smart-search-target` can dim while we're searching.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (pending) {
+      document.body.dataset.smartSearching = "true";
+    } else {
+      delete document.body.dataset.smartSearching;
+    }
+    return () => {
+      delete document.body.dataset.smartSearching;
+    };
+  }, [pending]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

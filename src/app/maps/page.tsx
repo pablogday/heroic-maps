@@ -110,6 +110,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
         </div>
 
         <SmartSearchBar initialError={sp.nlError} />
+        <div data-smart-search-target className="smart-search-target">
         <Filters />
 
         {items.length === 0 ? (
@@ -236,6 +237,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
             )}
           </nav>
         )}
+        </div>
        </PageReveal>
       </main>
       <SiteFooter />

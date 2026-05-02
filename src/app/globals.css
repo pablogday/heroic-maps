@@ -213,3 +213,16 @@ button:disabled,
   background-size: 200% 100%;
   animation: parchment-shimmer 2.4s ease-in-out infinite;
 }
+
+/* Smart-search "thinking" state — dim/disable the part of /maps that's
+ * about to change while the LLM picks filters. Toggled by a body data-
+ * attribute set by SmartSearchBar. */
+body[data-smart-searching="true"] .smart-search-target {
+  opacity: 0.35;
+  pointer-events: none;
+  filter: blur(1px);
+  transition: opacity 200ms ease-out, filter 200ms ease-out;
+}
+.smart-search-target {
+  transition: opacity 200ms ease-out, filter 200ms ease-out;
+}
