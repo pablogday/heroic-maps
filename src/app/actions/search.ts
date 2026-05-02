@@ -110,7 +110,8 @@ export async function smartSearch(
   try {
     const res = await client.messages.parse({
       model: "claude-haiku-4-5",
-      max_tokens: 512,
+      // Filter JSON is tiny — 256 is plenty and shaves latency.
+      max_tokens: 256,
       system: [
         {
           type: "text",
