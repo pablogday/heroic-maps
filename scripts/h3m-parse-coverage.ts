@@ -267,6 +267,7 @@ async function fetchAndParse(
       lossType: null,
       totalPlayers: null,
       terrainOffset: null,
+      terrainPlausible: false,
     };
   }
 }
