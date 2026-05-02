@@ -37,6 +37,7 @@ import {
 } from "./conditions";
 import { parseHotaPrefix } from "./hota";
 import { walkToTerrain } from "./worldData";
+import { parseTerrain, type Terrain } from "./terrain";
 
 export type Confidence = "high" | "partial" | "failed";
 
@@ -61,6 +62,9 @@ export interface ParseResult {
    * if the parser walked there successfully. Null when we didn't
    * try (HotA/WoG path) or the walk failed. */
   terrainOffset: number | null;
+  /** Parsed terrain grid (surface + optional underground). Null when
+   * `terrainOffset` is null. */
+  terrain: Terrain | null;
   warnings: string[];
   /** Filled if confidence=failed. */
   error: string | null;
@@ -178,14 +182,25 @@ export function parseH3m(input: Uint8Array): ParseResult {
   // where the terrain layer starts. HotA/WoG use the same layout as
   // SoD here (player blocks were the same too, empirically).
   let terrainOffset: number | null = null;
+  let terrain: Terrain | null = null;
   if (players && victory && loss) {
-    const walkFormat =
-      HOTA_FORMATS.has(format) || format === "WoG" ? "SoD" : format;
+    const walkFormat: "RoE" | "AB" | "SoD" =
+      HOTA_FORMATS.has(format) || format === "WoG"
+        ? "SoD"
+        : format === "RoE" || format === "AB"
+          ? format
+          : "SoD";
     try {
       walkToTerrain(reader, walkFormat);
       terrainOffset = reader.offset;
+      terrain = parseTerrain(
+        reader,
+        header.width,
+        header.width,
+        header.hasUnderground
+      );
     } catch {
-      // Diagnostic only — surfaces via terrainOffset === null.
+      // Diagnostic only — surfaces via terrain === null.
     }
   }
 
@@ -203,6 +218,7 @@ export function parseH3m(input: Uint8Array): ParseResult {
     loss,
     factions,
     terrainOffset,
+    terrain,
     warnings,
     error: null,
   };
@@ -233,6 +249,7 @@ function emptyResult(format: FormatId, versionMagic: number): ParseResult {
     loss: null,
     factions: null,
     terrainOffset: null,
+    terrain: null,
     warnings: [],
     error: null,
   };
@@ -254,5 +271,7 @@ export type { BasicHeader } from "./header";
 export type { FormatId } from "./versions";
 export type { PlayerSlot } from "./playerInfo";
 export type { VictoryCondition, LossCondition } from "./conditions";
+export type { Terrain, Tile } from "./terrain";
+export { TERRAIN_NAMES, terrainPlausibility } from "./terrain";
 export { unwrapMapFile } from "./unwrap";
 export type { Unwrapped } from "./unwrap";

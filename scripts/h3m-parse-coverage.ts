@@ -16,7 +16,7 @@ config({ path: ".env.local", override: true });
 
 import postgres from "postgres";
 import pLimit from "p-limit";
-import { parseH3m, unwrapMapFile } from "../src/lib/h3m";
+import { parseH3m, unwrapMapFile, terrainPlausibility } from "../src/lib/h3m";
 
 type Args = {
   limit?: number;
@@ -72,6 +72,7 @@ async function main() {
     const lossHistogram = new Map<string, number>();
     const playerCountHistogram = new Map<number, number>();
     let terrainReached = 0;
+    let terrainPlausible = 0;
     let highParsed = 0;
     let processed = 0;
 
@@ -119,6 +120,7 @@ async function main() {
           }
           if (result.confidence === "high") highParsed++;
           if (result.terrainOffset !== null) terrainReached++;
+          if (result.terrainPlausible) terrainPlausible++;
 
           if (result.confidence === "failed" && result.error) {
             const list =
@@ -142,9 +144,16 @@ async function main() {
     );
 
     console.log(
-      `\nTerrain reached: ${terrainReached} / ${highParsed} high-parsed (${
+      `\nTerrain reached:    ${terrainReached} / ${highParsed} high-parsed (${
         highParsed === 0 ? 0 : ((100 * terrainReached) / highParsed).toFixed(1)
       }%)`
+    );
+    console.log(
+      `Terrain plausible:  ${terrainPlausible} / ${terrainReached} reached (${
+        terrainReached === 0
+          ? 0
+          : ((100 * terrainPlausible) / terrainReached).toFixed(1)
+      }%) — terrain ids all in known range`
     );
 
     console.log(`\n=== By DB version (what we labeled the map) ===`);
@@ -203,6 +212,7 @@ async function fetchAndParse(
   lossType: string | null;
   totalPlayers: number | null;
   terrainOffset: number | null;
+  terrainPlausible: boolean;
 }> {
   try {
     const res = await fetch(url);
@@ -215,6 +225,7 @@ async function fetchAndParse(
         lossType: null,
         totalPlayers: null,
         terrainOffset: null,
+        terrainPlausible: false,
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
@@ -228,9 +239,15 @@ async function fetchAndParse(
         lossType: null,
         totalPlayers: null,
         terrainOffset: null,
+        terrainPlausible: false,
       };
     }
     const r = parseH3m(Buffer.from(unwrapped.bytes));
+    const plausible =
+      r.terrain !== null &&
+      terrainPlausibility(r.terrain.surface) < 0.01 &&
+      (r.terrain.underground === null ||
+        terrainPlausibility(r.terrain.underground) < 0.01);
     return {
       format: r.format,
       confidence: r.confidence,
@@ -239,6 +256,7 @@ async function fetchAndParse(
       lossType: r.loss?.type ?? null,
       totalPlayers: r.totalPlayers,
       terrainOffset: r.terrainOffset,
+      terrainPlausible: plausible,
     };
   } catch (e) {
     return {
@@ -248,6 +266,7 @@ async function fetchAndParse(
       victoryType: null,
       lossType: null,
       totalPlayers: null,
+      terrainOffset: null,
     };
   }
 }

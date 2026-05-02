@@ -18,7 +18,7 @@ _(nothing active)_
   - [x] **v0.4** — HotA player blocks + win/loss + WoG support. Empirical finding: HotA's player block layout is identical to SoD's (the wider faction pool still fits in 16 bits). WoG is also SoD-compatible. Total parse coverage: 96.5% of corpus high (2856/2959). Backfill filled victory/loss for 1282 additional maps and corrected factions arrays for 1521 maps.
   - [ ] **HotA `.h3c` campaign archives** — 91 files (magic 0x06 / 0x0a). Different format entirely (multi-map archives), needs a separate parser module
   - [x] **v0.7** — Walk past conditions → terrain. Implements team info, allowed heroes, placeholder heroes, disposed heroes, reserved padding, allowed artifacts/spells/abilities, rumors, and predefined heroes. Lands at terrain layer for 1708 / 2856 high-parsed maps (60% overall, 91% SoD-family). HotA/WoG predefined heroes section likely has format-specific deltas (more heroes? extra fields?) — that's v0.8 territory.
-  - [ ] **v0.8** — terrain grid parser (read width × height tiles per level)
+  - [x] **v0.8** — terrain grid parser. Reads `width × height × 7` bytes for surface (and again for underground when present). 1611 maps now parse with terrain IDs all in the known range (94.3% of those that reach terrain). Public API exposes `terrain: { surface: Tile[], underground: Tile[] | null }`.
   - [ ] **v0.9** — minimap renderer (terrain palette → PNG via canvas)
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
   - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
