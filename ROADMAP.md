@@ -19,7 +19,7 @@ _(nothing active)_
   - [ ] **HotA `.h3c` campaign archives** — 91 files (magic 0x06 / 0x0a). Different format entirely (multi-map archives), needs a separate parser module
   - [x] **v0.7** — Walk past conditions → terrain. Implements team info, allowed heroes, placeholder heroes, disposed heroes, reserved padding, allowed artifacts/spells/abilities, rumors, and predefined heroes. Lands at terrain layer for 1708 / 2856 high-parsed maps (60% overall, 91% SoD-family). HotA/WoG predefined heroes section likely has format-specific deltas (more heroes? extra fields?) — that's v0.8 territory.
   - [x] **v0.8** — terrain grid parser. Reads `width × height × 7` bytes for surface (and again for underground when present). 1611 maps now parse with terrain IDs all in the known range (94.3% of those that reach terrain). Public API exposes `terrain: { surface: Tile[], underground: Tile[] | null }`.
-  - [ ] **v0.9** — minimap renderer (terrain palette → PNG via canvas)
+  - [x] **v0.9** — minimap renderer. Pure RGBA function `renderMinimap(terrain, opts)` works in Node + browser. `npm run h3m:render -- <slug>` writes a PNG to `backups/minimaps/`. Visual eyeball test: real HoMM3 maps render legibly with continents, oceans, biomes, fortress shapes visible.
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
   - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.

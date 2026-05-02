@@ -17,7 +17,8 @@
     "test": "tsx --test src/lib/**/__tests__/*.test.ts",
     "h3m:coverage": "tsx scripts/h3m-parse-coverage.ts",
     "h3m:debug": "tsx scripts/h3m-debug.ts",
-    "h3m:backfill": "tsx scripts/h3m-backfill.ts"
+    "h3m:backfill": "tsx scripts/h3m-backfill.ts",
+    "h3m:render": "tsx scripts/h3m-render.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

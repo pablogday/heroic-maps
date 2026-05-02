@@ -273,5 +273,7 @@ export type { PlayerSlot } from "./playerInfo";
 export type { VictoryCondition, LossCondition } from "./conditions";
 export type { Terrain, Tile } from "./terrain";
 export { TERRAIN_NAMES, terrainPlausibility } from "./terrain";
+export { renderMinimap, TERRAIN_COLOR } from "./render";
+export type { MinimapImage, RenderOptions } from "./render";
 export { unwrapMapFile } from "./unwrap";
 export type { Unwrapped } from "./unwrap";
