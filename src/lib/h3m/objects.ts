@@ -425,7 +425,8 @@ function parseBody(
       }
       return null;
 
-    case 222: // HOTA_CUSTOM_OBJECT_1 (Ancient Lamp / Sea Barrel / Jetsam / Vial of Mana)
+    // ===== HotA custom objects (real IDs per VCMI EntityIdentifiers.h) =====
+    case ObjClass.HOTA_CUSTOM_OBJECT_1: // 145 — Ancient Lamp / Sea Barrel / Jetsam / Vial of Mana
       if (f.levelHOTA5) {
         if (objSubclass === 0) readRewardWithAmount(reader, f);
         else if (objSubclass === 1) readLeanTo(reader, f);
@@ -433,18 +434,22 @@ function parseBody(
       }
       return null;
 
-    case 223: // HOTA_CUSTOM_OBJECT_2 (Seafaring Academy)
+    case ObjClass.HOTA_CUSTOM_OBJECT_2: // 146 — Seafaring Academy
       if (f.levelHOTA5 && objSubclass === 0) {
         reader.u32le(); // customized
         reader.skip(f.skillsBytes);
       }
       return null;
 
-    case 224: // HOTA_CUSTOM_OBJECT_3 (Trapper Lodge?)
+    case ObjClass.HOTA_CUSTOM_OBJECT_3: // 144 — Trapper Lodge variants
       if (f.levelHOTA9 && objSubclass === 12) {
         reader.skip(4 + 4 + 4 + 4); // content + gold + creatureAmount + creatureType
       }
       return null;
+
+    // ===== Abandoned Mine (HotA, class 220 — separate from MINE) =====
+    case ObjClass.ABANDONED_MINE:
+      return readAbandonedMine(reader, f);
 
     // ===== Default: no body (matches VCMI's readGeneric) =====
     default:
