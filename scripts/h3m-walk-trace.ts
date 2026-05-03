@@ -20,6 +20,7 @@ import { parsePlayers } from "../src/lib/h3m/playerInfo";
 import { parseVictory, parseLoss } from "../src/lib/h3m/conditions";
 import { parseHotaPrefix } from "../src/lib/h3m/hota";
 import { walkToTerrain, type WalkTrace } from "../src/lib/h3m/worldData";
+import { featuresFor } from "../src/lib/h3m/objects";
 
 const HOTA: ReadonlySet<FormatId> = new Set<FormatId>(["HotA1", "HotA2", "HotA3"]);
 
@@ -57,7 +58,8 @@ async function main() {
     const versionMagic = reader.u32le();
     const format = VERSION_MAGIC[versionMagic] ?? "Unknown";
     const isHota = HOTA.has(format);
-    if (isHota) parseHotaPrefix(reader);
+    let hotaSubRev: number | null = null;
+    if (isHota) hotaSubRev = parseHotaPrefix(reader).subRevision;
 
     const headerFormat = isHota || format === "WoG" ? "SoD" : format;
     const header = parseBasicHeader(reader, headerFormat as "RoE" | "AB" | "SoD");
@@ -66,21 +68,20 @@ async function main() {
     const l = parseLoss(reader);
 
     console.log(`map: ${m.slug}`);
-    console.log(`  format: ${format} (header treated as ${headerFormat})`);
+    console.log(
+      `  format: ${format} (header treated as ${headerFormat})${
+        hotaSubRev !== null ? ` hotaSubRev=${hotaSubRev}` : ""
+      }`
+    );
     console.log(`  size: ${header.size} (${header.width}px), underground: ${header.hasUnderground}`);
     console.log(`  victory: ${v.type} — ${v.description}`);
     console.log(`  loss:    ${l.type} — ${l.description}`);
     console.log(`  cursor at byte ${reader.offset} after conditions\n`);
 
-    const walkFormat: "RoE" | "AB" | "SoD" =
-      isHota || format === "WoG"
-        ? "SoD"
-        : format === "RoE" || format === "AB"
-          ? format
-          : "SoD";
+    const features = featuresFor(format, hotaSubRev);
     const trace: WalkTrace = [];
     try {
-      walkToTerrain(reader, walkFormat, trace);
+      walkToTerrain(reader, features, trace);
     } catch (e) {
       console.log(`walkToTerrain THREW: ${e instanceof Error ? e.message : String(e)}\n`);
     }

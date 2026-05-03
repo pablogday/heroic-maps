@@ -60,16 +60,22 @@ export interface ObjectsFeatures {
   skillsBytes: number; // 4
   buildingsBytes: number; // 6
   resourcesBytes: number; // 4
-  artifactSlotsCount: number; // 18 (RoE/AB) | 19 (SoD/WoG) | 21 (HotA)
-  // Single-id widths
+  /** Bytes for the allowed-heroes bitmask. 16 (RoE) | 20 (AB/SoD/WoG) |
+   * 23 (HotA base) | 25 (HotA5+) | 27 (HotA7+). */
+  heroesBytes: number;
+  artifactSlotsCount: number; // 18 (RoE/AB) | 19 (SoD/WoG/HotA)
   /** 1 (RoE) | 2 (AB+) — for artifact id and creature id */
   artifactCreatureWidth: number;
   // Format level flags
   levelAB: boolean;
   levelSOD: boolean;
+  /** True for any HotA file (subRev 0+). VCMI uses this as the "is
+   * HotA at all" gate. levelHOTA1+ are subRev-specific extensions. */
+  levelHOTA0: boolean;
   levelHOTA1: boolean;
   levelHOTA3: boolean;
   levelHOTA5: boolean;
+  levelHOTA6: boolean;
   levelHOTA7: boolean;
   levelHOTA9: boolean;
 }
@@ -86,13 +92,16 @@ export function featuresFor(
     skillsBytes: 4,
     buildingsBytes: 6,
     resourcesBytes: 4,
+    heroesBytes: 16,
     artifactSlotsCount: 18,
     artifactCreatureWidth: 1,
     levelAB: false,
     levelSOD: false,
+    levelHOTA0: false,
     levelHOTA1: false,
     levelHOTA3: false,
     levelHOTA5: false,
+    levelHOTA6: false,
     levelHOTA7: false,
     levelHOTA9: false,
   };
@@ -101,6 +110,7 @@ export function featuresFor(
   // AB+
   f.factionsBytes = 2;
   f.artifactsBytes = 17;
+  f.heroesBytes = 20;
   f.artifactCreatureWidth = 2;
   f.levelAB = true;
   if (format === "AB") return f;
@@ -111,17 +121,21 @@ export function featuresFor(
   f.levelSOD = true;
   if (format === "SoD" || format === "WoG") return f;
 
-  // HotA — same as SoD plus subRev-dependent flags
+  // HotA — inherit from SoD plus subRev-dependent extensions
   if (format === "HotA1" || format === "HotA2" || format === "HotA3") {
     f.artifactsBytes = 21;
     f.artifactSlotsCount = 19;
+    f.heroesBytes = 23;
+    f.levelHOTA0 = true;
     const v = hotaSubRev ?? 0;
     f.levelHOTA1 = v > 0;
     f.levelHOTA3 = v > 2;
     f.levelHOTA5 = v > 4;
+    f.levelHOTA6 = v > 5;
     f.levelHOTA7 = v > 6;
     f.levelHOTA9 = v > 8;
-    if (v >= 5) f.factionsBytes = 2; // factionsCount=11 still fits in 2 bytes
+    if (v >= 5) f.heroesBytes = 25;
+    if (v >= 7) f.heroesBytes = 27;
   }
   return f;
 }
@@ -527,21 +541,14 @@ function readBoxHotaContent(reader: BinaryReader, f: ObjectsFeatures): void {
     reader.skip(4); // movementMode
     reader.skip(4); // movementAmount
   }
-  if (f.levelHOTA5 && f.levelHOTA7 === false) {
-    // Strictly speaking VCMI uses levelHOTA6 here; conservative.
+  if (f.levelHOTA6) {
+    reader.skip(4); // allowedDifficultiesMask
   }
-  // levelHOTA6 — allowedDifficultiesMask
-  // We don't have a HOTA6 flag (lumped into HOTA5/7); approximate via HOTA5
-  // — the read happens at HOTA6+ in VCMI, which we treat as HOTA5+ for
-  // simplicity (HOTA6 is HotA 1.7.1, HOTA5 is 1.7.0 — the field appeared
-  // at 1.7.x). For accuracy we check HOTA5 & assume same applies; if a
-  // 1.7.0 file lacks it we'll mis-walk those — rare in our corpus.
-  // SKIPPING this read for safety; coverage will tell.
   if (f.levelHOTA9) {
     const usesEvents = reader.u8() !== 0;
     if (usesEvents) {
-      reader.skip(4);
-      reader.skip(1);
+      reader.skip(4); // eventID
+      reader.skip(1); // synchronizeObjects bool
     }
   }
 }
@@ -606,12 +613,15 @@ function readQuest(reader: BinaryReader, f: ObjectsFeatures): void {
     case 10: {
       // HOTA_MULTI
       const sub = reader.u32le();
-      if (sub === 0) reader.skip((f.artifactCreatureWidth === 1 ? 1 : 2)); // bitmask hero classes — approx
-      else if (sub === 1) reader.skip(4); // daysPassed
+      if (sub === 0) {
+        // VCMI readBitmaskHeroClassesSized: u32 count + (count+7)/8 bytes
+        const classesCount = reader.u32le();
+        reader.skip((classesCount + 7) >> 3);
+      } else if (sub === 1) reader.skip(4); // daysPassed
       else if (sub === 2) reader.skip(4); // difficultyMask
       else if (sub === 3) {
-        reader.skip(4);
-        reader.skip(1);
+        reader.skip(4); // scriptID
+        reader.skip(1); // unknown bool
       }
       break;
     }
@@ -870,8 +880,9 @@ function readRewardWithArtifact(
   f: ObjectsFeatures
 ): void {
   if (f.levelHOTA5) {
-    const content = reader.u32le() | 0;
-    if (content !== -1) reader.skip(4);
+    // VCMI: i32 content + 4 bytes (artifact32 if content matches index, else garbage).
+    // Layout is fixed regardless of content value.
+    reader.skip(4 + 4);
   }
 }
 
@@ -897,7 +908,8 @@ function readCampfire(reader: BinaryReader, f: ObjectsFeatures): void {
   if (f.levelHOTA5) {
     const content = reader.u32le() | 0;
     if (content === -1) reader.skip(14);
-    else reader.skip(4 + 4 + 4 + 4 + 4); // skip+amount+res+amount+res
+    // VCMI: skipUnused(4) + i32 amountA + i8 resA + i32 amountB + i8 resB
+    else reader.skip(4 + 4 + 1 + 4 + 1);
   }
 }
 
@@ -905,7 +917,8 @@ function readLeanTo(reader: BinaryReader, f: ObjectsFeatures): void {
   if (f.levelHOTA5) {
     const content = reader.u32le() | 0;
     if (content === -1) reader.skip(14);
-    else reader.skip(4 + 4 + 4 + 5);
+    // VCMI: skipUnused(4) + i32 amountA + i8 resA + skipUnused(5)
+    else reader.skip(4 + 4 + 1 + 5);
   }
 }
 
@@ -913,7 +926,8 @@ function readWagon(reader: BinaryReader, f: ObjectsFeatures): void {
   if (f.levelHOTA5) {
     const content = reader.u32le() | 0;
     if (content === -1 || content === 1) reader.skip(14);
-    else if (content === 0) reader.skip(4 + 4 + 4 + 5);
+    // VCMI custom (content==0): artifact32 + i32 amountA + i8 resA + skipUnused(5)
+    else if (content === 0) reader.skip(4 + 4 + 1 + 5);
   }
 }
 
@@ -921,6 +935,7 @@ function readHotaGrave(reader: BinaryReader, f: ObjectsFeatures): void {
   if (f.levelHOTA5) {
     const content = reader.u32le() | 0;
     if (content === -1) reader.skip(14);
-    else reader.skip(4 + 4 + 4 + 5);
+    // VCMI: artifact32 + i32 amountA + i8 resA + skipUnused(5)
+    else reader.skip(4 + 4 + 1 + 5);
   }
 }

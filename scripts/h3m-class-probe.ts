@@ -108,7 +108,10 @@ async function probe(
     parsePlayers(reader, headerFormat as "RoE" | "AB" | "SoD");
     parseVictory(reader, headerFormat as "RoE" | "AB" | "SoD");
     parseLoss(reader);
-    walkToTerrain(reader, headerFormat as "RoE" | "AB" | "SoD");
+    walkToTerrain(
+      reader,
+      (await import("../src/lib/h3m/objects")).featuresFor(format, null)
+    );
     parseTerrain(reader, hdr.width, hdr.width, hdr.hasUnderground);
 
     // Now at objects. Parse templates.

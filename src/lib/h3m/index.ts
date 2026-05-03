@@ -202,19 +202,15 @@ export function parseH3m(input: Uint8Array): ParseResult {
   const factions = players ? summarizeFactions(players) : null;
 
   // Walk past everything between conditions and terrain so we know
-  // where the terrain layer starts. HotA/WoG use the same layout as
-  // SoD here (player blocks were the same too, empirically).
+  // where the terrain layer starts. The features struct carries all
+  // format-aware widths and HotA-version flags; walkToTerrain reads
+  // each section accordingly.
+  const features = featuresFor(format, hotaSubRev);
   let terrainOffset: number | null = null;
   let terrain: Terrain | null = null;
   if (players && victory && loss) {
-    const walkFormat: "RoE" | "AB" | "SoD" =
-      HOTA_FORMATS.has(format) || format === "WoG"
-        ? "SoD"
-        : format === "RoE" || format === "AB"
-          ? format
-          : "SoD";
     try {
-      walkToTerrain(reader, walkFormat);
+      walkToTerrain(reader, features);
       terrainOffset = reader.offset;
       terrain = parseTerrain(
         reader,
@@ -229,7 +225,6 @@ export function parseH3m(input: Uint8Array): ParseResult {
 
   let objects: ObjectsParseResult | null = null;
   if (terrain) {
-    const features = featuresFor(format, hotaSubRev);
     try {
       objects = parseObjects(reader, features);
     } catch {

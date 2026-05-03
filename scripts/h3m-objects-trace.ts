@@ -78,7 +78,7 @@ async function main() {
     parsePlayers(reader, headerFormat as "RoE" | "AB" | "SoD");
     parseVictory(reader, headerFormat as "RoE" | "AB" | "SoD");
     parseLoss(reader);
-    walkToTerrain(reader, headerFormat as "RoE" | "AB" | "SoD");
+    walkToTerrain(reader, featuresFor(format, hotaSubRev));
     parseTerrain(reader, hdr.width, hdr.width, hdr.hasUnderground);
 
     const features = featuresFor(format, hotaSubRev);
