@@ -47,6 +47,19 @@ const isSize = (v?: string): v is Size =>
   !!v && (SIZES as readonly string[]).includes(v);
 const isFaction = (v?: string): v is Faction =>
   !!v && (FACTIONS as readonly string[]).includes(v);
+
+/** Parse `?faction=castle,inferno` (or single value) into a typed
+ * faction array. Tolerates legacy single-value links and skips
+ * unknown tokens silently. */
+function parseFactions(v?: string): Faction[] {
+  if (!v) return [];
+  const seen = new Set<Faction>();
+  for (const raw of v.split(",")) {
+    const trimmed = raw.trim();
+    if (isFaction(trimmed)) seen.add(trimmed);
+  }
+  return [...seen];
+}
 const isDifficulty = (v?: string): v is Difficulty =>
   !!v && (DIFFICULTIES as readonly string[]).includes(v);
 const isSort = (v?: string): v is Sort =>
@@ -59,7 +72,7 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
     version: isVersion(sp.version) ? sp.version : undefined,
     size: isSize(sp.size) ? sp.size : undefined,
     players: sp.players ? Number(sp.players) || undefined : undefined,
-    faction: isFaction(sp.faction) ? sp.faction : undefined,
+    factions: parseFactions(sp.faction),
     difficulty: isDifficulty(sp.difficulty) ? sp.difficulty : undefined,
     hasUnderground:
       sp.underground === "yes"
@@ -89,7 +102,8 @@ export default async function MapsPage({ searchParams }: { searchParams: SP }) {
     if (next.version) params.set("version", next.version);
     if (next.size) params.set("size", next.size);
     if (next.players) params.set("players", String(next.players));
-    if (next.faction) params.set("faction", next.faction);
+    if (next.factions && next.factions.length > 0)
+      params.set("faction", next.factions.join(","));
     if (next.difficulty) params.set("difficulty", next.difficulty);
     if (next.sort && next.sort !== "downloads")
       params.set("sort", next.sort);

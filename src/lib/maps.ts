@@ -19,7 +19,10 @@ export type MapFilters = {
   version?: Version;
   size?: Size;
   players?: number;
-  faction?: Faction;
+  /** Empty/undefined = no faction filter. Multi-select uses OR
+   * semantics: a map matches if it contains ANY of the selected
+   * factions. */
+  factions?: Faction[];
   difficulty?: Difficulty;
   /** True = only underground maps; false = only surface-only; undefined = either. */
   hasUnderground?: boolean;
@@ -97,8 +100,16 @@ export async function listMaps(f: MapFilters, viewerId: string | null = null) {
     where.push(gte(maps.totalPlayers, f.players));
     where.push(lte(maps.humanPlayers, f.players));
   }
-  if (f.faction) {
-    where.push(sql`${maps.factions} @> ARRAY[${f.faction}]::text[]`);
+  if (f.factions && f.factions.length > 0) {
+    // Array-overlap (`&&`): row matches when any selected faction
+    // appears in `maps.factions`. OR semantics across the multi-
+    // select. Casting to text[] because `maps.factions` is text[].
+    where.push(
+      sql`${maps.factions} && ARRAY[${sql.join(
+        f.factions.map((x) => sql`${x}`),
+        sql`, `
+      )}]::text[]`
+    );
   }
   if (f.difficulty) {
     where.push(eq(maps.difficulty, f.difficulty));

@@ -140,34 +140,62 @@ export function Filters() {
       />
 
       <FactionStrip
-        active={(sp.get("faction") as Faction | null) ?? null}
+        active={parseSelected(sp.get("faction"))}
         apply={apply}
       />
     </div>
   );
 }
 
+/** Comma-separated `faction=` URL value → set. Tolerates the
+ * pre-multi-select single-value links so old bookmarks keep
+ * working. */
+function parseSelected(raw: string | null): Set<Faction> {
+  const out = new Set<Faction>();
+  if (!raw) return out;
+  for (const tok of raw.split(",")) {
+    const t = tok.trim();
+    if ((FACTIONS as readonly string[]).includes(t)) out.add(t as Faction);
+  }
+  return out;
+}
+
 function FactionStrip({
   active,
   apply,
 }: {
-  active: Faction | null;
+  active: Set<Faction>;
   apply: (next: Record<string, string>) => void;
 }) {
+  const toggle = (f: Faction) => {
+    const next = new Set(active);
+    if (next.has(f)) next.delete(f);
+    else next.add(f);
+    // Re-emit in the canonical FACTIONS order so the URL is stable
+    // regardless of click order — easier to compare/share.
+    const ordered = FACTIONS.filter((x) => next.has(x));
+    apply({ faction: ordered.join(",") });
+  };
+
   return (
     <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-brass/30 pt-3">
       <span className="mr-1 text-xs uppercase tracking-wider text-ink-soft">
         Faction
+        {active.size > 1 && (
+          <span className="ml-1 normal-case tracking-normal text-ink-soft/60">
+            (any of)
+          </span>
+        )}
       </span>
       {FACTIONS.map((f) => {
-        const isActive = active === f;
+        const isActive = active.has(f);
         return (
           <button
             key={f}
             type="button"
             title={FACTION_LABEL[f]}
             aria-pressed={isActive}
-            onClick={() => apply({ faction: isActive ? "" : f })}
+            onClick={() => toggle(f)}
             className={`rounded p-0.5 transition-all ${
               isActive
                 ? "ring-2 ring-brass-bright scale-110"
@@ -178,7 +206,7 @@ function FactionStrip({
           </button>
         );
       })}
-      {active && (
+      {active.size > 0 && (
         <button
           type="button"
           onClick={() => apply({ faction: "" })}
