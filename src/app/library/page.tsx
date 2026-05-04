@@ -80,9 +80,13 @@ export default async function LibraryPage({
     sp.tab === "bookmarks" || sp.tab === "played" ? sp.tab : "favorites";
   const sort = parseSort(sp.sort);
 
+  // Cheap counts for the mobile drawer headers + desktop tab badges.
+  // All three run in parallel; each is a single index scan.
+  const counts = await getLibraryCounts(userId);
+
   if (tab === "played") {
     return (
-      <PlayedTab userId={userId} activeTab={tab} sort={sort} />
+      <PlayedTab userId={userId} activeTab={tab} sort={sort} counts={counts} />
     );
   }
 
@@ -107,7 +111,7 @@ export default async function LibraryPage({
     .limit(60);
 
   return (
-    <Shell activeTab={tab} sort={sort}>
+    <Shell activeTab={tab} sort={sort} counts={counts}>
       {rows.length === 0 ? (
         <EmptyMessage tab={tab} />
       ) : (
@@ -126,14 +130,45 @@ export default async function LibraryPage({
   );
 }
 
+interface LibraryCounts {
+  favorites: number;
+  bookmarks: number;
+  played: number;
+}
+
+async function getLibraryCounts(userId: string): Promise<LibraryCounts> {
+  const [favBook] = await db
+    .select({
+      favorites: sql<number>`count(*) FILTER (WHERE ${userMaps.favorited})::int`,
+      bookmarks: sql<number>`count(*) FILTER (WHERE ${userMaps.bookmarked})::int`,
+    })
+    .from(userMaps)
+    .where(eq(userMaps.userId, userId));
+
+  const [played] = await db
+    .select({
+      n: sql<number>`count(DISTINCT ${playSessions.mapId})::int`,
+    })
+    .from(playSessions)
+    .where(eq(playSessions.userId, userId));
+
+  return {
+    favorites: favBook?.favorites ?? 0,
+    bookmarks: favBook?.bookmarks ?? 0,
+    played: played?.n ?? 0,
+  };
+}
+
 async function PlayedTab({
   userId,
   activeTab,
   sort,
+  counts,
 }: {
   userId: string;
   activeTab: Tab;
   sort: Sort;
+  counts: LibraryCounts;
 }) {
   // One row per distinct (user, map) — most-recent session wins for the
   // "last played" sort and badge.
@@ -173,7 +208,7 @@ async function PlayedTab({
     .limit(60);
 
   return (
-    <Shell activeTab={activeTab} sort={sort}>
+    <Shell activeTab={activeTab} sort={sort} counts={counts}>
       {rows.length === 0 ? (
         <EmptyMessage tab={activeTab} />
       ) : (
@@ -206,10 +241,12 @@ async function PlayedTab({
 function Shell({
   activeTab,
   sort,
+  counts,
   children,
 }: {
   activeTab: Tab;
   sort: Sort;
+  counts: LibraryCounts;
   children: React.ReactNode;
 }) {
   return (
@@ -224,7 +261,8 @@ function Shell({
             </p>
           </div>
 
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-brass/40">
+          {/* Desktop: horizontal tabs above the grid. */}
+          <div className="mb-6 hidden flex-wrap items-end justify-between gap-3 border-b border-brass/40 md:flex">
             <nav className="flex gap-2" aria-label="Library tabs">
               {TABS.map((t) => {
                 const active = t.value === activeTab;
@@ -241,36 +279,140 @@ function Shell({
                   >
                     <span className="mr-1.5">{t.emoji}</span>
                     {t.label}
+                    <span className="ml-1.5 text-xs text-ink-soft">
+                      {counts[t.value]}
+                    </span>
                   </Link>
                 );
               })}
             </nav>
-            <div className="mb-2 flex items-center gap-2 text-sm">
-              <span className="text-xs text-ink-soft">Sort:</span>
-              {SORTS.map((s) => {
-                const active = s.value === sort;
-                return (
-                  <Link
-                    key={s.value}
-                    href={`/library?tab=${activeTab}&sort=${s.value}`}
-                    aria-current={active ? "true" : undefined}
-                    className={`rounded border px-2 py-0.5 text-xs transition-colors ${
-                      active
-                        ? "border-brass bg-brass/15 text-ink"
-                        : "border-brass/40 text-ink-soft hover:bg-brass/15 hover:text-ink"
-                    }`}
-                  >
-                    {s.label}
-                  </Link>
-                );
-              })}
-            </div>
+            <SortStrip activeTab={activeTab} sort={sort} />
           </div>
 
-          {children}
+          {/* Desktop: render content directly. */}
+          <div className="hidden md:block">{children}</div>
+
+          {/* Mobile: vertical drawers. Each section is its own row;
+            * the active one expands to show its grid + sort options.
+            * Inactive rows are <Link>s that navigate to that tab on
+            * tap (server reload — keeps state in the URL). */}
+          <div className="space-y-3 md:hidden">
+            {TABS.map((t) => {
+              const active = t.value === activeTab;
+              return (
+                <div
+                  key={t.value}
+                  className={`overflow-hidden rounded border ${
+                    active
+                      ? "border-brass bg-parchment-dark/30"
+                      : "border-brass/30"
+                  }`}
+                >
+                  <DrawerHeader
+                    tab={t}
+                    active={active}
+                    count={counts[t.value]}
+                  />
+                  {active && (
+                    <div className="border-t border-brass/30 px-3 py-4">
+                      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+                        <span className="text-xs text-ink-soft">Sort:</span>
+                        <SortStrip
+                          activeTab={activeTab}
+                          sort={sort}
+                          compact
+                        />
+                      </div>
+                      {children}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </PageReveal>
       </main>
       <SiteFooter />
+    </div>
+  );
+}
+
+/** Drawer header — clickable when collapsed (links to that tab),
+ * static text when active. The chevron rotates to suggest open
+ * state. */
+function DrawerHeader({
+  tab,
+  active,
+  count,
+}: {
+  tab: { value: Tab; label: string; emoji: string };
+  active: boolean;
+  count: number;
+}) {
+  const inner = (
+    <div className="flex items-center gap-3 px-4 py-3 text-left">
+      <span className="text-lg" aria-hidden>
+        {tab.emoji}
+      </span>
+      <span className="flex-1 font-display text-base text-ink">
+        {tab.label}
+      </span>
+      <span className="text-xs text-ink-soft">{count}</span>
+      <span
+        aria-hidden
+        className={`text-ink-soft transition-transform ${
+          active ? "rotate-90" : ""
+        }`}
+      >
+        ›
+      </span>
+    </div>
+  );
+  if (active) return <div>{inner}</div>;
+  return (
+    <Link
+      href={`/library?tab=${tab.value}`}
+      aria-label={`Open ${tab.label}`}
+      className="block hover:bg-brass/10"
+    >
+      {inner}
+    </Link>
+  );
+}
+
+function SortStrip({
+  activeTab,
+  sort,
+  compact = false,
+}: {
+  activeTab: Tab;
+  sort: Sort;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 ${
+        compact ? "" : "mb-2 text-sm"
+      }`}
+    >
+      {!compact && <span className="text-xs text-ink-soft">Sort:</span>}
+      {SORTS.map((s) => {
+        const active = s.value === sort;
+        return (
+          <Link
+            key={s.value}
+            href={`/library?tab=${activeTab}&sort=${s.value}`}
+            aria-current={active ? "true" : undefined}
+            className={`rounded border px-2 py-0.5 text-xs transition-colors ${
+              active
+                ? "border-brass bg-brass/15 text-ink"
+                : "border-brass/40 text-ink-soft hover:bg-brass/15 hover:text-ink"
+            }`}
+          >
+            {s.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
