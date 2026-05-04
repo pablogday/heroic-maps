@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { maps, reviews, users, playSessions, reviewReactions, comments, userMaps } from "@/db/schema";
 import { isAdmin } from "@/lib/admin";
@@ -289,7 +289,7 @@ export default async function MapDetailPage({
       .where(
         and(
           eq(reviewReactions.userId, viewerId),
-          sql`${reviewReactions.reviewId} = ANY(${ids})`
+          inArray(reviewReactions.reviewId, ids)
         )
       );
     for (const row of rows) myReactionIds.add(row.reviewId);
@@ -319,7 +319,7 @@ export default async function MapDetailPage({
           })
           .from(comments)
           .innerJoin(users, eq(users.id, comments.userId))
-          .where(sql`${comments.reviewId} = ANY(${allReviewIds})`)
+          .where(inArray(comments.reviewId, allReviewIds))
           .orderBy(comments.reviewId, comments.createdAt);
   const commentsByReview = new Map<number, typeof commentRows>();
   for (const c of commentRows) {
