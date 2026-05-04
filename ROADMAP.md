@@ -23,7 +23,13 @@ _(nothing active)_
   - [x] **v1.0** — Render-on-upload integrated. `uploadMap` action parses, renders surface + underground minimaps via sharp, uploads them to R2 at `previews/uploaded/<slug>.png` / `<slug>_und.png`, stores URLs on the maps row. Best-effort: file goes through even if rendering fails.
   - [x] **Object layer parsing** — full body parsers for 100+ classes (towns, heroes, monsters, mines, resources, signs, shrines, pandora, events, seer's huts, quest guards, witch huts, banks, HotA custom objects, etc.). Walks 99.5% of corpus fully (2822 / 2835 maps that reach terrain). Terrain reach 98.9% of high-parsed. HotA full-parse 99.8%. Remaining 13 partial walks are HotA edge cases (random monster + pandora variants in HOTA7+/HOTA8+ extensions not yet decoded).
   - [ ] **rar support** — adds `node-unrar-js` (WASM) to rescue ~14% of unparsed files
-  - [ ] **v1.0** — minimap rendering from terrain (tile palette, sprite atlas — separate effort)
+  - [ ] **Library extraction (`@heroic-maps/h3m-parser`)** — parser is currently solid for *this app* but ~40% of a real npm package. To ship publicly:
+    - [ ] Typed object payloads (per-class discriminated unions: `Town { faction, buildings, garrison }`, `Hero { army, artifacts }`, etc.) — currently throws away most body bytes after walking past them
+    - [ ] Real test suite with hand-decoded fixtures + round-trip checks against VCMI output (current "coverage" only proves it doesn't throw)
+    - [ ] Error recovery + per-section confidence flags so callers can ask "give me what you've got"
+    - [ ] HOTA7+/HOTA8+ extension decoding for the 13 remaining partial walks
+    - [ ] Extract from Next.js app: own package boundary, no `postgres`/`dotenv` leakage, ESM + CJS builds, `.d.ts`
+    - [ ] README, API docs, examples
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.
 - [ ] **#6 AI series detection pass** — Long tail the heuristic missed (~95% of maps still untagged for series).
 - [ ] **#16 Public API + RSS feed** — `/api/v1/maps`, `/api/v1/maps/{slug}`, `/api/v1/maps/{slug}/reviews`, `/api/v1/factions/{name}`, `/feed.rss`, `/feed.atom`. Same repo, versioned, rate-limited (Upstash or Vercel edge), CDN-cached, documented at `/api`. (~2 days max)
