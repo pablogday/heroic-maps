@@ -8,11 +8,12 @@
  * components — keeps the surface auditable and the defaults explicit.
  */
 
-/** Which crest renderer to use site-wide. `pixel` = real HoMM3 banner
- * PNGs (default), `svg` = original hand-rolled SVG glyphs. */
+/** Which crest renderer to use site-wide. `svg` = original hand-drawn
+ * shield glyphs (current default), `pixel` = real Heroes 3 banner
+ * PNGs. Flip via `NEXT_PUBLIC_FACTION_CREST_STYLE=pixel`. */
 export type FactionCrestStyle = "pixel" | "svg";
 
 export function factionCrestStyle(): FactionCrestStyle {
   const v = process.env.NEXT_PUBLIC_FACTION_CREST_STYLE;
-  return v === "svg" ? "svg" : "pixel";
+  return v === "pixel" ? "pixel" : "svg";
 }
