@@ -15,6 +15,7 @@ import Link from "next/link";
 import { signInDiscord } from "@/app/actions/auth";
 import { EmptyState } from "@/components/EmptyState";
 import { RatingStars } from "@/components/RatingStars";
+import { StatIcon } from "@/components/StatIcon";
 
 import { AdminRemoveReview } from "./AdminRemoveReview";
 import { CommentThread } from "./CommentThread";
@@ -107,9 +108,9 @@ export function ReviewsSection({
 
       {otherReviews.length === 0 && !myReview ? (
         <EmptyState
-          glyph="✍"
-          title="No reviews yet"
-          body="Be the first to share your take on this map."
+          icon={<StatIcon name="quill" size={42} />}
+          title="The chronicles are blank"
+          body="No hero has yet penned a tale of this realm — be the first to take up the quill."
         />
       ) : (
         <ul className="space-y-4">

@@ -361,9 +361,9 @@ function EmptyMessage({ tab }: { tab: Tab }) {
   if (tab === "favorites") {
     return (
       <EmptyState
-        glyph="♥"
-        title="No favorites yet"
-        body="Tap the ♥ on any map to keep it close at hand."
+        icon={<IconFavorite size={42} />}
+        title="No treasures favored yet"
+        body="Tap the heart on any map to keep it close at hand."
         cta={{ href: "/maps", label: "Browse maps" }}
       />
     );
@@ -371,18 +371,18 @@ function EmptyMessage({ tab }: { tab: Tab }) {
   if (tab === "bookmarks") {
     return (
       <EmptyState
-        glyph="🔖"
-        title="No bookmarks yet"
-        body="Save maps to play later — they'll show up here."
+        icon={<IconBookmark size={42} />}
+        title="The shelves stand empty"
+        body="Mark a scroll for later and it will wait for your return here."
         cta={{ href: "/maps", label: "Browse maps" }}
       />
     );
   }
   return (
     <EmptyState
-      glyph="⚔"
-      title="No playthroughs logged yet"
-      body="Open a map's detail page and hit Played to start your journal."
+      icon={<IconPlayed size={42} />}
+      title="No conquests logged"
+      body="Open a map and hit Played to begin your chronicle."
       cta={{ href: "/maps", label: "Find a map to play" }}
     />
   );
