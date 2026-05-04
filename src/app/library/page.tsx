@@ -17,11 +17,17 @@ export const metadata = {
   description: "Your favorites, bookmarks, and playthroughs.",
 };
 
+import {
+  IconBookmark,
+  IconFavorite,
+  IconPlayed,
+} from "@/components/nav-icons";
+
 type Tab = "favorites" | "bookmarks" | "played";
-const TABS: { value: Tab; label: string; emoji: string }[] = [
-  { value: "favorites", label: "Favorites", emoji: "♥" },
-  { value: "bookmarks", label: "Bookmarks", emoji: "🔖" },
-  { value: "played", label: "Played", emoji: "⚔" },
+const TABS: { value: Tab; label: string; Icon: () => React.ReactElement }[] = [
+  { value: "favorites", label: "Favorites", Icon: IconFavorite },
+  { value: "bookmarks", label: "Bookmarks", Icon: IconBookmark },
+  { value: "played", label: "Played", Icon: IconPlayed },
 ];
 
 const OUTCOME_LABEL = { won: "Won", lost: "Lost", abandoned: "Abandoned" };
@@ -273,8 +279,8 @@ function Shell({
                     active ? "md:border-brass" : "md:border-transparent",
                   ].join(" ")}
                 >
-                  <span className="text-lg md:text-base" aria-hidden>
-                    {t.emoji}
+                  <span className={active ? "text-brass" : "text-ink-soft"}>
+                    <t.Icon />
                   </span>
                   <span className="flex-1 font-display text-base md:text-sm">
                     {t.label}

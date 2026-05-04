@@ -6,7 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { toast } from "@/lib/toast";
 import { PUBLIC_LINKS, USER_LINKS, type NavLink } from "./nav-data";
-import { IconHamburger, IconSignOut } from "./nav-icons";
+import { IconHamburger, IconProfile, IconSettings, IconSignOut } from "./nav-icons";
 
 /**
  * Mobile-only merged menu. Single bordered button — when signed in shows
@@ -134,7 +134,9 @@ export function MobileNav({
                         onClick={close}
                         className="flex items-center gap-3 rounded px-3 py-3 text-base font-display text-ink hover:bg-brass/15"
                       >
-                        <span className="text-brass">👤</span>
+                        <span className="text-brass">
+                          <IconProfile />
+                        </span>
                         Profile
                       </Link>
                     </li>
@@ -148,7 +150,9 @@ export function MobileNav({
                       onClick={close}
                       className="flex items-center gap-3 rounded px-3 py-3 text-base font-display text-ink hover:bg-brass/15"
                     >
-                      <span className="text-brass">⚙</span>
+                      <span className="text-brass">
+                        <IconSettings />
+                      </span>
                       Settings
                     </Link>
                   </li>

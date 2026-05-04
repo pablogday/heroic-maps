@@ -15,6 +15,7 @@ import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StatIcon, type IconName } from "@/components/StatIcon";
+import { IconDownloads, IconRating } from "@/components/nav-icons";
 import { MapStats } from "@/components/MapStats";
 import { MapThumbnail } from "@/components/MapThumbnail";
 import { PageReveal } from "@/components/PageReveal";
@@ -491,35 +492,32 @@ export default async function MapDetailPage({
                   Sign in to favorite, bookmark, or log a playthrough.
                 </p>
               )}
-              <dl className="mt-4 space-y-1.5 text-sm">
-                <Stat
-                  icon="downloads"
-                  label="Downloads"
-                  value={m.downloadCount.toLocaleString()}
-                />
-                <Stat
-                  icon="rating"
-                  label="Rating"
-                  value={
-                    avgRating != null
+              <dl className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="flex items-center gap-2 text-ink-soft">
+                    <IconDownloads size={16} className="text-brass" />
+                    Downloads
+                  </dt>
+                  <dd className="text-ink font-medium">
+                    {m.downloadCount.toLocaleString()}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="flex items-center gap-2 text-ink-soft">
+                    <IconRating size={16} className="text-brass" />
+                    Rating
+                  </dt>
+                  <dd className="text-ink font-medium">
+                    {avgRating != null
                       ? `${avgRating.toFixed(1)} (${m.ratingCount})`
-                      : "no reviews yet"
-                  }
-                />
-                {m.sourceRating != null && (
-                  <div
-                    className="flex items-center justify-between gap-2"
-                    title="Popularity score imported from maps4heroes.com — scale is unknown, treat as a rough proxy."
-                  >
-                    <dt className="flex items-center gap-2 text-ink-soft">
-                      <StatIcon name="rating" />
-                      maps4heroes score
-                    </dt>
-                    <dd className="text-ink font-medium">
-                      {Math.round(m.sourceRating)}
-                    </dd>
-                  </div>
-                )}
+                      : "no reviews yet"}
+                  </dd>
+                </div>
+                {/* maps4heroes score is preserved in the DB
+                  * (`maps.source_rating`) but hidden from the UI for
+                  * now — its scale is unknown so it confuses more than
+                  * it helps. Re-enable later if we surface it as a
+                  * "popularity" axis on `/stats` or similar. */}
               </dl>
             </div>
 

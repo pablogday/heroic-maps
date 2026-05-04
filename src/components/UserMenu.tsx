@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { signOut } from "next-auth/react";
 import { toast } from "@/lib/toast";
 import { USER_LINKS } from "./nav-data";
-import { IconSignOut } from "./nav-icons";
+import { IconProfile, IconSettings, IconSignOut } from "./nav-icons";
 
 /**
  * Desktop avatar dropdown. Shown on md+ only — on mobile the merged
@@ -105,7 +105,9 @@ export function UserMenu({
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded px-3 py-2 text-sm text-ink hover:bg-brass/20"
             >
-              <span className="text-brass">👤</span>
+              <span className="text-brass">
+                <IconProfile />
+              </span>
               Profile
             </Link>
           )}
@@ -129,7 +131,9 @@ export function UserMenu({
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 rounded px-3 py-2 text-sm text-ink hover:bg-brass/20"
           >
-            <span className="text-brass">⚙</span>
+            <span className="text-brass">
+              <IconSettings />
+            </span>
             Settings
           </Link>
           <div className="my-1 h-px bg-brass/30" />

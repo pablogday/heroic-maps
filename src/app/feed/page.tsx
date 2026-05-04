@@ -87,14 +87,23 @@ export default async function FeedPage() {
             cta={{ href: "/maps", label: "Browse maps" }}
           />
         ) : (
-          <ol className="relative space-y-4 border-l border-brass/40 pl-6">
+          // Timeline: explicit absolute-positioned line so dot
+          // centers and line center share the same x-coordinate
+          // exactly. Previous version used `border-l` on the <ol>
+          // which sat at x=0 while the dots' centers landed off to
+          // the right.
+          <ol className="relative space-y-4 pl-6">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-2 h-[calc(100%-1rem)] w-px bg-brass/40"
+            />
             {items.map((it) => (
               <li key={it.key} className="relative">
                 <span
-                  className={`absolute -left-[29px] top-3 inline-flex h-3 w-3 items-center justify-center rounded-full border-2 border-brass ${
+                  aria-hidden
+                  className={`absolute top-3 -left-6 -translate-x-1/2 inline-flex h-3 w-3 items-center justify-center rounded-full border-2 border-brass ${
                     it.kind === "added" ? "bg-emerald" : "bg-blood"
                   }`}
-                  aria-hidden
                 />
                 <div className="card-brass rounded p-4">
                   {it.kind === "added" ? (

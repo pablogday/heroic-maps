@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toggleFavorite, toggleBookmark } from "@/app/actions/library";
+import { IconBookmark, IconFavorite, IconPlayed } from "@/components/nav-icons";
 
 export function MapActions({
   mapId,
@@ -41,10 +42,10 @@ export function MapActions({
         }`}
         title={favorited ? "Remove from favorites" : "Add to favorites"}
       >
-        <span className="block text-base leading-none">
-          {favorited ? "♥" : "♡"}
+        <span className="mx-auto block w-fit">
+          <IconFavorite size={18} />
         </span>
-        <span className="mt-0.5 block">Favorite</span>
+        <span className="mt-1 block">Favorite</span>
       </button>
 
       <button
@@ -66,10 +67,10 @@ export function MapActions({
         }`}
         title={bookmarked ? "Remove bookmark" : "Bookmark for later"}
       >
-        <span className="block text-base leading-none">
-          {bookmarked ? "🔖" : "📑"}
+        <span className="mx-auto block w-fit">
+          <IconBookmark size={18} />
         </span>
-        <span className="mt-0.5 block">Bookmark</span>
+        <span className="mt-1 block">Bookmark</span>
       </button>
 
       <button
@@ -82,8 +83,10 @@ export function MapActions({
         }`}
         title={hasPlayed ? "Log another playthrough" : "Log a playthrough"}
       >
-        <span className="block text-base leading-none">⚔</span>
-        <span className="mt-0.5 block">{hasPlayed ? "Log again" : "Played"}</span>
+        <span className="mx-auto block w-fit">
+          <IconPlayed size={18} />
+        </span>
+        <span className="mt-1 block">{hasPlayed ? "Log again" : "Played"}</span>
       </button>
     </div>
   );
