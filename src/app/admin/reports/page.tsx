@@ -96,10 +96,10 @@ export default async function AdminReportsPage() {
   const commentCountMap = new Map(commentCounts.map((c) => [c.commentId, c.n]));
 
   return (
-    <>
+    <div className="relative z-10 flex flex-1 flex-col">
       <SiteHeader />
-      <PageReveal>
-        <main className="mx-auto max-w-4xl px-6 pb-16">
+      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+        <PageReveal>
           <h1 className="font-display text-3xl text-ink">Reports</h1>
           <p className="mt-1 text-sm text-ink-soft">
             Unresolved user reports against reviews and comments. Click
@@ -157,10 +157,10 @@ export default async function AdminReportsPage() {
               </ul>
             )}
           </Section>
-        </main>
-      </PageReveal>
+        </PageReveal>
+      </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }
 
