@@ -3,7 +3,11 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews, users, playSessions, reviewReactions } from "@/db/schema";
+import { maps, reviews, users, playSessions, reviewReactions, comments } from "@/db/schema";
+import { isAdmin } from "@/lib/admin";
+import { CommentThread } from "./CommentThread";
+import { ReportButton } from "./ReportButton";
+import { AdminRemoveReview } from "./AdminRemoveReview";
 import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
@@ -242,6 +246,7 @@ export default async function MapDetailPage({
           rating: reviews.rating,
           body: reviews.body,
           createdAt: reviews.createdAt,
+          deletedAt: reviews.deletedAt,
         })
         .from(reviews)
         .where(and(eq(reviews.mapId, m.id), eq(reviews.userId, viewerId)))
@@ -251,6 +256,7 @@ export default async function MapDetailPage({
   const otherReviews = await db
     .select({
       id: reviews.id,
+      userId: reviews.userId,
       rating: reviews.rating,
       body: reviews.body,
       createdAt: reviews.createdAt,
@@ -263,8 +269,18 @@ export default async function MapDetailPage({
     .innerJoin(users, eq(reviews.userId, users.id))
     .where(
       viewerId
-        ? and(eq(reviews.mapId, m.id), ne(reviews.userId, viewerId))
-        : eq(reviews.mapId, m.id)
+        ? and(
+            eq(reviews.mapId, m.id),
+            ne(reviews.userId, viewerId),
+            // Hide soft-deleted reviews from the public list. Admin
+            // moderation view (separate page, not built yet) gets the
+            // full set.
+            sql`${reviews.deletedAt} IS NULL`
+          )
+        : and(
+            eq(reviews.mapId, m.id),
+            sql`${reviews.deletedAt} IS NULL`
+          )
     )
     .orderBy(
       reviewSort === "helpful"
@@ -289,6 +305,40 @@ export default async function MapDetailPage({
       );
     for (const row of rows) myReactionIds.add(row.reviewId);
   }
+
+  // Comments under reviews. One query for the whole map; group by
+  // reviewId in JS. We exclude comments on soft-deleted reviews via
+  // the JOIN so threads under removed reviews disappear cleanly.
+  const allReviewIds = [
+    ...(myReview ? [myReview.id] : []),
+    ...otherReviews.map((r) => r.id),
+  ];
+  const commentRows =
+    allReviewIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: comments.id,
+            reviewId: comments.reviewId,
+            userId: comments.userId,
+            body: comments.body,
+            createdAt: comments.createdAt,
+            deletedAt: comments.deletedAt,
+            authorName: users.name,
+            authorImage: users.image,
+            authorUsername: users.username,
+          })
+          .from(comments)
+          .innerJoin(users, eq(users.id, comments.userId))
+          .where(sql`${comments.reviewId} = ANY(${allReviewIds})`)
+          .orderBy(comments.reviewId, comments.createdAt);
+  const commentsByReview = new Map<number, typeof commentRows>();
+  for (const c of commentRows) {
+    const list = commentsByReview.get(c.reviewId) ?? [];
+    list.push(c);
+    commentsByReview.set(c.reviewId, list);
+  }
+  const viewerIsAdmin = isAdmin(viewerId);
 
   // JSON-LD structured data — Google uses this for rich snippets
   // (rating stars, review counts, image preview).
@@ -458,16 +508,24 @@ export default async function MapDetailPage({
               {/* Compose / edit own review */}
               {viewerId ? (
                 <div className="mb-5 rounded border border-brass/30 bg-parchment-dark/30 p-4">
-                  <div className="mb-2 text-xs uppercase tracking-wider text-ink-soft">
-                    {myReview ? "Your review" : "Leave a review"}
-                  </div>
-                  <ReviewForm
-                    mapId={m.id}
-                    slug={m.slug}
-                    initialRating={myReview?.rating}
-                    initialBody={myReview?.body}
-                    reviewId={myReview?.id}
-                  />
+                  {myReview?.deletedAt ? (
+                    <p className="text-sm italic text-ink-soft">
+                      Your review was removed by a moderator.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="mb-2 text-xs uppercase tracking-wider text-ink-soft">
+                        {myReview ? "Your review" : "Leave a review"}
+                      </div>
+                      <ReviewForm
+                        mapId={m.id}
+                        slug={m.slug}
+                        initialRating={myReview?.rating}
+                        initialBody={myReview?.body}
+                        reviewId={myReview?.id}
+                      />
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="mb-5 flex items-center justify-between rounded border border-brass/30 bg-parchment-dark/30 p-4">
@@ -545,7 +603,39 @@ export default async function MapDetailPage({
                           initialReacting={myReactionIds.has(r.id)}
                           signedIn={!!viewerId}
                         />
+                        {viewerId && r.userId !== viewerId && (
+                          <ReportButton
+                            targetType="review"
+                            targetId={r.id}
+                            slug={m.slug}
+                          />
+                        )}
+                        {viewerIsAdmin && (
+                          <AdminRemoveReview
+                            reviewId={r.id}
+                            slug={m.slug}
+                          />
+                        )}
                       </div>
+                      <CommentThread
+                        reviewId={r.id}
+                        slug={m.slug}
+                        viewerId={viewerId ?? null}
+                        viewerIsAdmin={viewerIsAdmin}
+                        initialComments={(commentsByReview.get(r.id) ?? []).map(
+                          (c) => ({
+                            id: c.id,
+                            reviewId: c.reviewId,
+                            userId: c.userId,
+                            body: c.body,
+                            createdAt: c.createdAt,
+                            deletedAt: c.deletedAt,
+                            authorName: c.authorName,
+                            authorImage: c.authorImage,
+                            authorUsername: c.authorUsername,
+                          })
+                        )}
+                      />
                     </li>
                   ))}
                 </ul>

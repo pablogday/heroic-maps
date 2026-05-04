@@ -71,6 +71,13 @@
       "when": 1777858505794,
       "tag": "0009_add_campaign_data",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777903555140,
+      "tag": "0010_comments_reports_softdelete",
+      "breakpoints": true
     }
   ]
 }

@@ -304,6 +304,11 @@ export const reviews = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    /** Set when an admin soft-deletes a review for moderation reasons.
+     * Row stays in place (so its comments/reactions don't cascade-
+     * delete) but the body is hidden and a placeholder renders. Author
+     * hard-deletes still go through the normal DELETE path. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [
     uniqueIndex("reviews_map_user_unique").on(t.mapId, t.userId),
@@ -332,6 +337,69 @@ export const reviewReactions = pgTable(
   (t) => [
     primaryKey({ columns: [t.reviewId, t.userId] }),
     index("review_reactions_review_idx").on(t.reviewId),
+  ]
+);
+
+/**
+ * Flat (no nesting) discussion under each review. Authors can hard-
+ * delete their own; admins can soft-delete via `deletedAt`.
+ */
+export const comments = pgTable(
+  "comments",
+  {
+    id: serial("id").primaryKey(),
+    reviewId: integer("review_id")
+      .notNull()
+      .references(() => reviews.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("comments_review_time_idx").on(t.reviewId, t.createdAt),
+    index("comments_user_idx").on(t.userId),
+  ]
+);
+
+export const reportTargetEnum = pgEnum("report_target", [
+  "review",
+  "comment",
+]);
+
+/**
+ * User-submitted reports against reviews or comments. Resolved by
+ * admins (see `lib/admin.ts`). One report per (reporter, target) so
+ * a single user can't pile-on; the count is what flags a target as
+ * needing review.
+ */
+export const reports = pgTable(
+  "reports",
+  {
+    id: serial("id").primaryKey(),
+    targetType: reportTargetEnum("target_type").notNull(),
+    targetId: integer("target_id").notNull(),
+    reporterId: text("reporter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    reason: text("reason"),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("reports_target_idx").on(t.targetType, t.targetId),
+    index("reports_unresolved_idx").on(t.resolvedAt),
+    uniqueIndex("reports_one_per_user_per_target").on(
+      t.reporterId,
+      t.targetType,
+      t.targetId
+    ),
   ]
 );
 
