@@ -46,17 +46,13 @@ _(nothing active)_
 
 ## Polish & nice-to-haves
 
-- [ ] Smart search (Claude NL → SQL): "small map for 2 players, no underground" → SQL filter (~2 hr)
 - [ ] "Tell me about this map" chat — Q&A on detail pages grounded in description + reviews (~2 hr)
 - [ ] Playstyle filter (story / playable / sandbox / unknown) — heuristic now (30 min) → AI refine later
 - [ ] Rate-limit review submissions (one per minute per user, 30 min)
 - [ ] Better empty states for `/feed`, `/library`, `/stats` matching `/maps` parchment loader (30 min)
-- [ ] Review reactions (👍 / "this helped", 1 hr)
 - [ ] Themed confirm-delete modal instead of native `confirm()` (45 min)
 - [ ] Skeleton placeholders inside homepage activity strip (20 min)
 - [ ] Sort options inside `/library` tabs (recent / oldest / by name, 30 min)
-- [ ] Author field — scrape and display author names properly (1 hr)
-- [ ] Map preview lightbox — click minimap → fullscreen viewer with zoom + pan + surface/underground toggle
 - [ ] Diff view between map versions (when uploaders revise a map)
 - [ ] Embed widget — `<iframe src="/embed/maps/slug">` for Discord servers / blogs
 - [ ] Share-a-screenshot — let users attach in-game screenshots to reviews
