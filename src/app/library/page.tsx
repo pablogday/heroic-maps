@@ -60,6 +60,7 @@ const cardCols = {
   hasUnderground: maps.hasUnderground,
   factions: maps.factions,
   downloadCount: maps.downloadCount,
+  isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
 };
 
 export default async function LibraryPage({

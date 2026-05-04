@@ -8,6 +8,7 @@ import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
 import { SeriesBlock } from "@/components/SeriesBlock";
+import { CampaignBlock } from "@/components/CampaignBlock";
 import { auth } from "@/auth";
 import { signInDiscord } from "@/app/actions/auth";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -359,6 +360,8 @@ export default async function MapDetailPage({
                 {m.description ?? "No description provided."}
               </p>
             </section>
+
+            {m.campaignData ? <CampaignBlock data={m.campaignData} /> : null}
 
             <section className="card-brass mt-4 rounded p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">

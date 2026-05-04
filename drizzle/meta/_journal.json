@@ -64,6 +64,13 @@
       "when": 1777756732749,
       "tag": "0008_add_author",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777858505794,
+      "tag": "0009_add_campaign_data",
+      "breakpoints": true
     }
   ]
 }

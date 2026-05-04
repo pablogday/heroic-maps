@@ -225,6 +225,13 @@ export const maps = pgTable(
      *     totalObjects } */
     objectStats: jsonb("object_stats"),
 
+    /** Parsed .h3c campaign descriptor when the file is a campaign
+     * archive. Null for single-map files (the common case). Shape:
+     *   { version: "SoD"|"HotA"|..., scenarioCount, scenarios:
+     *     [{ mapName, regionColor, difficulty, regionText,
+     *        prologText, epilogText }], hotaFormatVersion } */
+    campaignData: jsonb("campaign_data"),
+
     // Towns/factions present on the map. Best-effort: inferred from
     // description keywords by `scripts/backfill-factions.ts` for now;
     // a future Claude tagging pass will refine.

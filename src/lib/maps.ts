@@ -50,6 +50,9 @@ const cardCols = {
   hasUnderground: maps.hasUnderground,
   factions: maps.factions,
   downloadCount: maps.downloadCount,
+  // Truthy when this row's file is a `.h3c` campaign archive — used
+  // by MapCard to flip the "Campaign" badge.
+  isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
 };
 
 export type MapCardData = {
@@ -68,6 +71,7 @@ export type MapCardData = {
   hasUnderground: boolean;
   factions: string[] | null;
   downloadCount: number;
+  isCampaign: boolean;
   bookmarked: boolean;
 };
 

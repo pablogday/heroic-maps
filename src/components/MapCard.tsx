@@ -45,8 +45,16 @@ export function MapCard({
       />
       <div className="flex flex-1 flex-col p-4">
         <div className="mb-2 flex items-center justify-between gap-2 text-xs text-ink-soft">
-          <span className="truncate" title={map.version}>
+          <span className="truncate flex items-center gap-1.5" title={map.version}>
             {versionLabel(map.version)}
+            {map.isCampaign && (
+              <span
+                className="rounded border border-brass/50 bg-brass/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-ink"
+                title="Campaign archive — multiple scenarios"
+              >
+                Campaign
+              </span>
+            )}
           </span>
           <RatingBadge
             ratingSum={map.ratingSum}

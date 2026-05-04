@@ -68,6 +68,7 @@ export default async function SeriesPage({
       factions: maps.factions,
       downloadCount: maps.downloadCount,
       seriesPosition: maps.seriesPosition,
+      isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
       bookmarked: sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`,
     })
     .from(maps)
