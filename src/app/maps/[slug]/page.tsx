@@ -658,19 +658,20 @@ export default async function MapDetailPage({
                 <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
                   Towns
                 </h3>
-                {/* flex-wrap with fixed item width keeps the grid even
-                 * regardless of label length — 5 across on wide cards,
-                 * collapses to 3 / 2 on narrower screens. */}
-                <ul className="flex flex-wrap gap-x-2 gap-y-3">
+                {/* Explicit 5-column grid on desktop, 3 across on
+                 * narrow screens. Cells share remaining space evenly
+                 * via minmax(0,1fr) so labels can shrink without
+                 * pushing the row to wrap. */}
+                <ul className="grid grid-cols-3 gap-x-2 gap-y-3 sm:grid-cols-5">
                   {(m.factions as Faction[]).map((f) => (
-                    <li key={f} className="basis-[58px] flex-none">
+                    <li key={f}>
                       <Link
                         href={`/maps?faction=${f}`}
                         className="flex flex-col items-center gap-1 text-center text-[11px] leading-tight text-ink-soft hover:text-ink"
                         title={`Browse ${FACTION_LABEL[f]} maps`}
                       >
                         <FactionCrest faction={f} size={32} />
-                        {FACTION_LABEL[f]}
+                        <span className="truncate w-full">{FACTION_LABEL[f]}</span>
                       </Link>
                     </li>
                   ))}
