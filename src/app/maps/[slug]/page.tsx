@@ -26,13 +26,14 @@ import { ReviewForm } from "./ReviewForm";
 import { PlayJournal } from "./PlayJournal";
 import { PreviewLightboxTrigger } from "./PreviewLightboxTrigger";
 import { HelpfulButton } from "./HelpfulButton";
+import { MapContentIcon, type MapContentKind } from "@/components/MapContentIcon";
 
 function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
   const num = (k: string): number => {
     const v = stats[k];
     return typeof v === "number" ? v : 0;
   };
-  const all: Array<[string, string, number]> = [
+  const all: Array<[MapContentKind, string, number]> = [
     ["towns", "Towns", num("towns")],
     ["heroes", "Heroes", num("heroes")],
     ["monsters", "Monsters", num("monsters")],
@@ -55,8 +56,11 @@ function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
       </h3>
       <dl className="space-y-1.5 text-sm">
         {rows.map(([key, label, n]) => (
-          <div key={key} className="flex items-baseline justify-between gap-2">
-            <dt className="text-ink-soft">{label}</dt>
+          <div key={key} className="flex items-center justify-between gap-2">
+            <dt className="flex items-center gap-2.5 text-ink-soft">
+              <MapContentIcon kind={key} size={18} className="text-brass" />
+              <span>{label}</span>
+            </dt>
             <dd className="text-ink font-medium">{n}</dd>
           </div>
         ))}

@@ -22,6 +22,18 @@ export function SiteFooter() {
           Heroic Maps — a fan-made tribute. Heroes of Might and Magic III is a
           trademark of Ubisoft.
         </p>
+        <p className="text-parchment/40">
+          Some icons by{" "}
+          <a
+            href="https://game-icons.net/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-2 hover:text-brass-bright hover:underline"
+          >
+            game-icons.net
+          </a>{" "}
+          (Lorc, Delapouite) — CC BY 3.0
+        </p>
       </div>
     </footer>
   );
