@@ -3,6 +3,7 @@ import { RatingBadge } from "./RatingBadge";
 import { FactionCrest } from "./FactionCrest";
 import { MapThumbnail } from "./MapThumbnail";
 import { BookmarkButton } from "./BookmarkButton";
+import { FavoriteButton } from "./FavoriteButton";
 import { SIZE_LABEL, versionLabel, type Size } from "@/lib/map-constants";
 import type { Faction } from "@/lib/factions";
 import type { MapCardData } from "@/lib/maps";
@@ -104,7 +105,13 @@ export function MapCard({
               <path d="M2.75 12a.75.75 0 0 1 .75.75v.75a.75.75 0 0 0 .75.75h7.5a.75.75 0 0 0 .75-.75v-.75a.75.75 0 0 1 1.5 0v.75A2.25 2.25 0 0 1 11.75 15.75h-7.5A2.25 2.25 0 0 1 2 13.5v-.75A.75.75 0 0 1 2.75 12Z" />
             </svg>
           </a>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <FavoriteButton
+              mapId={map.id}
+              slug={map.slug}
+              initial={map.favorited}
+              signedIn={signedIn}
+            />
             <BookmarkButton
               mapId={map.id}
               slug={map.slug}
@@ -113,7 +120,7 @@ export function MapCard({
             />
             <Link
               href={`/maps/${map.slug}`}
-              className="rounded border border-brass/50 px-3 py-1.5 text-sm text-ink transition-colors hover:bg-brass/20"
+              className="ml-1 rounded border border-brass/50 px-3 py-1.5 text-sm text-ink transition-colors hover:bg-brass/20"
             >
               View map
             </Link>

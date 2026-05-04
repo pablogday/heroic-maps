@@ -87,14 +87,17 @@ export type MapCardData = {
   downloadCount: number;
   isCampaign: boolean;
   bookmarked: boolean;
+  favorited: boolean;
 };
 
 /**
- * Adds the per-viewer `bookmarked` flag via a LEFT JOIN. When `viewerId`
- * is null we substitute a value that can never match any user_id, so the
- * join always emits NULLs and `bookmarked` collapses to false.
+ * Adds per-viewer `bookmarked` / `favorited` flags via a LEFT JOIN.
+ * When `viewerId` is null we substitute a sentinel id that can never
+ * match any user_id, so the join always emits NULLs and both flags
+ * collapse to false.
  */
 const bookmarkedExpr = sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`;
+const favoritedExpr = sql<boolean>`COALESCE(${userMaps.favorited}, false)`;
 function joinUserMapsOn(viewerId: string | null) {
   return and(
     eq(userMaps.mapId, maps.id),
@@ -156,7 +159,7 @@ export async function listMaps(f: MapFilters, viewerId: string | null = null) {
 
   const [rows, totalRows] = await Promise.all([
     db
-      .select({ ...cardCols, bookmarked: bookmarkedExpr })
+      .select({ ...cardCols, bookmarked: bookmarkedExpr, favorited: favoritedExpr })
       .from(maps)
       .leftJoin(userMaps, joinUserMapsOn(viewerId))
       .where(whereClause)
@@ -295,7 +298,7 @@ export async function getSimilarMaps(
   `;
 
   const rows = await db
-    .select({ ...cardCols, bookmarked: bookmarkedExpr, score })
+    .select({ ...cardCols, bookmarked: bookmarkedExpr, favorited: favoritedExpr, score })
     .from(maps)
     .leftJoin(userMaps, joinUserMapsOn(viewerId))
     .where(sql`${maps.id} <> ${map.id}`)
@@ -313,7 +316,7 @@ export async function getFeaturedMaps(
   viewerId: string | null = null
 ) {
   const rows = await db
-    .select({ ...cardCols, bookmarked: bookmarkedExpr })
+    .select({ ...cardCols, bookmarked: bookmarkedExpr, favorited: favoritedExpr })
     .from(maps)
     .leftJoin(userMaps, joinUserMapsOn(viewerId))
     .orderBy(desc(maps.sourceRating))

@@ -92,7 +92,11 @@ export default async function LibraryPage({
         : desc(userMaps.updatedAt);
 
   const rows = await db
-    .select({ ...mapCardCols, bookmarked: userMaps.bookmarked })
+    .select({
+      ...mapCardCols,
+      bookmarked: userMaps.bookmarked,
+      favorited: userMaps.favorited,
+    })
     .from(userMaps)
     .innerJoin(maps, eq(userMaps.mapId, maps.id))
     .where(where)
@@ -184,15 +188,24 @@ async function PlayedTab({
         ? asc(maps.name)
         : desc(recencyByMap.lastPlayed);
 
+  // LEFT JOIN userMaps so cards on the Played tab can still surface
+  // the viewer's bookmark / favorite state. Without this the toggle
+  // buttons render as "not set" even when the row is set, which leads
+  // to a misleading click.
   const rows = await db
     .select({
       ...mapCardCols,
-      bookmarked: sql<boolean>`false`.as("bookmarked"),
+      bookmarked: sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`,
+      favorited: sql<boolean>`COALESCE(${userMaps.favorited}, false)`,
       lastOutcome: recencyByMap.lastOutcome,
       sessionCount: recencyByMap.sessionCount,
     })
     .from(recencyByMap)
     .innerJoin(maps, eq(recencyByMap.mapId, maps.id))
+    .leftJoin(
+      userMaps,
+      and(eq(userMaps.mapId, maps.id), eq(userMaps.userId, userId))
+    )
     .orderBy(orderBy)
     .limit(60);
 

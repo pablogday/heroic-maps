@@ -55,6 +55,7 @@ export default async function SeriesPage({
       ...mapCardCols,
       seriesPosition: maps.seriesPosition,
       bookmarked: sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`,
+      favorited: sql<boolean>`COALESCE(${userMaps.favorited}, false)`,
     })
     .from(maps)
     .leftJoin(
