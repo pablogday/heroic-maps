@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import { createComment, deleteComment } from "@/app/actions/comments";
 import { adminSoftDeleteComment } from "@/app/actions/moderation";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { ReportButton } from "./ReportButton";
 
 interface CommentRow {
@@ -72,9 +73,16 @@ export function CommentThread({
     });
   };
 
-  const onDelete = (id: number, viaAdmin: boolean) => {
-    if (!confirm(viaAdmin ? "Remove this comment?" : "Delete your comment?"))
-      return;
+  const onDelete = async (id: number, viaAdmin: boolean) => {
+    const ok = await confirmDialog({
+      title: viaAdmin ? "Remove this comment?" : "Delete your comment?",
+      body: viaAdmin
+        ? "The comment will be hidden behind a moderation placeholder."
+        : "This can't be undone.",
+      confirmLabel: viaAdmin ? "Remove" : "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       const res = viaAdmin
         ? await adminSoftDeleteComment({ commentId: id, slug })

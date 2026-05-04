@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { adminSoftDeleteReview } from "@/app/actions/moderation";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 /** Admin-only button next to a review. Soft-deletes via the
  * moderation action; the page revalidates and the row hides. */
@@ -14,9 +15,14 @@ export function AdminRemoveReview({
 }) {
   const [pending, startTransition] = useTransition();
 
-  const onClick = () => {
-    if (!confirm("Remove this review? Author will see a 'removed by moderator' notice."))
-      return;
+  const onClick = async () => {
+    const ok = await confirmDialog({
+      title: "Remove this review?",
+      body: "The author will see a 'removed by moderator' notice in place of the form.",
+      confirmLabel: "Remove",
+      variant: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await adminSoftDeleteReview({ reviewId, slug });
     });

@@ -48,11 +48,6 @@ _(nothing active)_
 
 - [ ] "Tell me about this map" chat — Q&A on detail pages grounded in description + reviews (~2 hr)
 - [ ] Playstyle filter (story / playable / sandbox / unknown) — heuristic now (30 min) → AI refine later
-- [ ] Rate-limit review submissions (one per minute per user, 30 min)
-- [ ] Better empty states for `/feed`, `/library`, `/stats` matching `/maps` parchment loader (30 min)
-- [ ] Themed confirm-delete modal instead of native `confirm()` (45 min)
-- [ ] Skeleton placeholders inside homepage activity strip (20 min)
-- [ ] Sort options inside `/library` tabs (recent / oldest / by name, 30 min)
 - [ ] Diff view between map versions (when uploaders revise a map)
 - [ ] Embed widget — `<iframe src="/embed/maps/slug">` for Discord servers / blogs
 - [ ] Share-a-screenshot — let users attach in-game screenshots to reviews

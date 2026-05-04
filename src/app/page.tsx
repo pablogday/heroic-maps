@@ -1,18 +1,18 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Suspense } from "react";
 import { auth } from "@/auth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { MapCard } from "@/components/MapCard";
 import {
-  getFeaturedMaps,
-  getRecentlyAdded,
-  getRecentlyReviewed,
-  VERSIONS,
-} from "@/lib/maps";
-import { VERSION_LABEL, versionLabel } from "@/lib/map-constants";
-import { formatRelativeTime } from "@/lib/relative-time";
+  RecentlyAddedCard,
+  RecentlyAddedSkeleton,
+  RecentlyReviewedCard,
+  RecentlyReviewedSkeleton,
+} from "@/components/HomeActivityStrip";
+import { getFeaturedMaps, VERSIONS } from "@/lib/maps";
+import { VERSION_LABEL } from "@/lib/map-constants";
 import { stagger } from "@/lib/stagger";
 
 export default async function Home() {
@@ -20,11 +20,10 @@ export default async function Home() {
   const viewerId = session?.user?.id ?? null;
   const signedIn = viewerId != null;
 
-  const [featured, recentlyAdded, recentlyReviewed] = await Promise.all([
-    getFeaturedMaps(3, viewerId),
-    getRecentlyAdded(4),
-    getRecentlyReviewed(4),
-  ]);
+  // Featured stays inline (it's above the fold). The activity strip
+  // streams in via <Suspense> below so the rest of the page paints
+  // immediately on cold-cache visits.
+  const featured = await getFeaturedMaps(3, viewerId);
 
   return (
     <div className="relative z-10 flex flex-col flex-1">
@@ -85,99 +84,15 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Newly added */}
-            <div className="card-brass rounded p-5">
-              <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
-                ✦ Newly added
-              </h3>
-              <ul className="divide-y divide-brass/20">
-                {recentlyAdded.map((m) => (
-                  <li key={m.id}>
-                    <Link
-                      href={`/maps/${m.slug}`}
-                      className="flex items-center gap-3 py-2 hover:text-blood"
-                    >
-                      {m.previewKey ? (
-                        <Image
-                          src={m.previewKey}
-                          alt=""
-                          width={40}
-                          height={40}
-                          className="h-10 w-10 flex-shrink-0 rounded object-cover pixelated bg-night-deep"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="h-10 w-10 flex-shrink-0 rounded bg-night-deep" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-ink group-hover:text-blood">
-                          {m.name}
-                        </div>
-                        <div className="text-xs text-ink-soft">
-                          {versionLabel(m.version)} ·{" "}
-                          {formatRelativeTime(m.addedAt)}
-                        </div>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Latest reviews */}
-            <div className="card-brass rounded p-5">
-              <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
-                ✦ Latest reviews
-              </h3>
-              {recentlyReviewed.length === 0 ? (
-                <p className="text-sm text-ink-soft">
-                  No reviews yet — be the first.
-                </p>
-              ) : (
-                <ul className="divide-y divide-brass/20">
-                  {recentlyReviewed.map((r) => (
-                    <li key={r.reviewId} className="py-2">
-                      <Link
-                        href={`/maps/${r.mapSlug}`}
-                        className="flex items-start gap-3 hover:text-blood"
-                      >
-                        {r.authorImage ? (
-                          <Image
-                            src={r.authorImage}
-                            alt=""
-                            width={32}
-                            height={32}
-                            className="h-8 w-8 flex-shrink-0 rounded-full border border-brass/40"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="h-8 w-8 flex-shrink-0 rounded-full bg-brass/30" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2">
-                            <span className="truncate text-sm font-medium text-ink">
-                              {r.mapName}
-                            </span>
-                            <span className="text-xs text-brass">
-                              {"★".repeat(r.rating)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-ink-soft">
-                            {r.authorName ?? "Anonymous"} ·{" "}
-                            {formatRelativeTime(r.createdAt)}
-                          </div>
-                          {r.body && (
-                            <p className="mt-1 line-clamp-1 text-xs text-ink-soft/90">
-                              {r.body}
-                            </p>
-                          )}
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {/* Each card streams independently — Suspense fallback shows
+             * a parchment-shimmer skeleton until the Neon round-trip
+             * resolves. Layout heights match so nothing jumps. */}
+            <Suspense fallback={<RecentlyAddedSkeleton />}>
+              <RecentlyAddedCard />
+            </Suspense>
+            <Suspense fallback={<RecentlyReviewedSkeleton />}>
+              <RecentlyReviewedCard />
+            </Suspense>
           </div>
         </section>
 
