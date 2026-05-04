@@ -57,9 +57,12 @@ function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
 
   return (
     <div className="card-brass rounded p-5">
-      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-        Map contents
-      </h3>
+      <div className="mb-3 flex items-center gap-1.5">
+        <h3 className="font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
+          Map contents
+        </h3>
+        <ParserSourceLink />
+      </div>
       <dl className="space-y-1.5 text-sm">
         {rows.map(([key, label, n]) => (
           <div key={key} className="flex items-center justify-between gap-2">
@@ -71,10 +74,34 @@ function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
           </div>
         ))}
       </dl>
-      <p className="mt-3 text-[11px] text-ink-soft/70">
-        Counted from the map file by our parser.
-      </p>
     </div>
+  );
+}
+
+/**
+ * Tiny "i" badge next to the Map Contents heading. On hover/focus it
+ * reveals a short tooltip explaining where the numbers come from and
+ * links to the parser source on GitHub. Click takes you straight
+ * there. CSS-only — no popover lib.
+ */
+function ParserSourceLink() {
+  return (
+    <a
+      href="https://github.com/pablogday/heroic-maps/tree/main/web/src/lib/h3m"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="About the parser — open source on GitHub"
+      className="group relative inline-flex h-4 w-4 flex-none items-center justify-center rounded-full border border-brass/50 text-[10px] font-display leading-none text-ink-soft transition-colors hover:border-brass hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brass/60"
+    >
+      <span aria-hidden>i</span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-60 -translate-x-1/2 rounded border border-brass/40 bg-night-deep px-3 py-2 text-left text-[11px] font-normal normal-case tracking-normal text-parchment/85 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+      >
+        These counts come from our open-source <code className="text-brass-bright">.h3m</code>{" "}
+        parser. Click to view the source on GitHub.
+      </span>
+    </a>
   );
 }
 
