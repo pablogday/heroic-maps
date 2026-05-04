@@ -20,7 +20,7 @@ export async function RecentlyAddedCard() {
   const items = await getRecentlyAdded(ROW_COUNT);
   return (
     <div className="card-brass rounded p-5">
-      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
         ✦ Newly added
       </h3>
       <ul className="divide-y divide-brass/20">
@@ -63,7 +63,7 @@ export async function RecentlyReviewedCard() {
   const items = await getRecentlyReviewed(ROW_COUNT);
   return (
     <div className="card-brass rounded p-5">
-      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+      <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
         ✦ Latest reviews
       </h3>
       {items.length === 0 ? (

@@ -56,7 +56,7 @@ export default async function Home() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-3 font-display text-sm uppercase tracking-[0.2em] text-ink-soft">
+          <h2 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
             Browse by version
           </h2>
           <div className="flex flex-wrap gap-2">

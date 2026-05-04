@@ -1,14 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { maps, reviews, users, playSessions, reviewReactions, comments } from "@/db/schema";
+import { maps, reviews, users, playSessions, reviewReactions, comments, userMaps } from "@/db/schema";
 import { isAdmin } from "@/lib/admin";
-import { CommentThread } from "./CommentThread";
-import { ReportButton } from "./ReportButton";
-import { AdminRemoveReview } from "./AdminRemoveReview";
-import { RatingStars } from "@/components/RatingStars";
+import { ReviewsSection } from "./ReviewsSection";
 import { SectionCard } from "@/components/SectionCard";
 import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
@@ -16,7 +12,6 @@ import { MapCard } from "@/components/MapCard";
 import { SeriesBlock } from "@/components/SeriesBlock";
 import { CampaignBlock } from "@/components/CampaignBlock";
 import { auth } from "@/auth";
-import { signInDiscord } from "@/app/actions/auth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StatIcon, type IconName } from "@/components/StatIcon";
@@ -27,11 +22,8 @@ import { FactionCrest } from "@/components/FactionCrest";
 import { FACTION_LABEL, type Faction } from "@/lib/factions";
 import { minDelay } from "@/lib/min-delay";
 import { stagger } from "@/lib/stagger";
-import { userMaps } from "@/db/schema";
-import { ReviewForm } from "./ReviewForm";
 import { PlayJournal } from "./PlayJournal";
 import { PreviewLightboxTrigger } from "./PreviewLightboxTrigger";
-import { HelpfulButton } from "./HelpfulButton";
 import { MapContentIcon, type MapContentKind } from "@/components/MapContentIcon";
 import {
   VictoryIcon,
@@ -446,192 +438,23 @@ export default async function MapDetailPage({
 
             {m.campaignData ? <CampaignBlock data={m.campaignData} /> : null}
 
-            <section className="card-brass mt-4 rounded p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-display text-lg text-ink">Reviews</h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-ink-soft">
-                    {avgRating != null
-                      ? `★ ${avgRating.toFixed(1)} · ${m.ratingCount} rating${m.ratingCount === 1 ? "" : "s"}`
-                      : "No ratings yet"}
-                  </span>
-                  {otherReviews.length > 1 && (
-                    <div className="inline-flex overflow-hidden rounded border border-brass/40 text-xs">
-                      <Link
-                        href={`/maps/${m.slug}`}
-                        scroll={false}
-                        className={`px-2 py-0.5 transition-colors ${
-                          reviewSort === "newest"
-                            ? "bg-brass/20 text-ink"
-                            : "text-ink-soft hover:bg-brass/15"
-                        }`}
-                      >
-                        Newest
-                      </Link>
-                      <Link
-                        href={`/maps/${m.slug}?reviewSort=helpful`}
-                        scroll={false}
-                        className={`px-2 py-0.5 transition-colors ${
-                          reviewSort === "helpful"
-                            ? "bg-brass/20 text-ink"
-                            : "text-ink-soft hover:bg-brass/15"
-                        }`}
-                      >
-                        Most helpful
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* AI summary */}
-              {m.aiSummary && (
-                <div className="mb-5 rounded border border-brass/40 bg-night-deep/40 p-4">
-                  <div className="mb-1.5 flex items-center gap-2 text-[11px] uppercase tracking-wider text-brass">
-                    <span aria-hidden>✦</span>
-                    <span>AI summary</span>
-                    <span className="text-ink-soft/70 normal-case tracking-normal">
-                      · based on {m.aiSummaryReviewCount} review
-                      {m.aiSummaryReviewCount === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-parchment/90 leading-relaxed">
-                    {m.aiSummary}
-                  </p>
-                </div>
-              )}
-
-              {/* Compose / edit own review */}
-              {viewerId ? (
-                <div className="mb-5 rounded border border-brass/30 bg-parchment-dark/30 p-4">
-                  {myReview?.deletedAt ? (
-                    <p className="text-sm italic text-ink-soft">
-                      Your review was removed by a moderator.
-                    </p>
-                  ) : (
-                    <>
-                      <div className="mb-2 text-xs uppercase tracking-wider text-ink-soft">
-                        {myReview ? "Your review" : "Leave a review"}
-                      </div>
-                      <ReviewForm
-                        mapId={m.id}
-                        slug={m.slug}
-                        initialRating={myReview?.rating}
-                        initialBody={myReview?.body}
-                        reviewId={myReview?.id}
-                      />
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="mb-5 flex items-center justify-between rounded border border-brass/30 bg-parchment-dark/30 p-4">
-                  <p className="text-sm text-ink-soft">
-                    Sign in to rate this map.
-                  </p>
-                  <form action={signInDiscord}>
-                    <button
-                      type="submit"
-                      className="btn-brass rounded px-3 py-1.5 text-xs font-display"
-                    >
-                      Sign in
-                    </button>
-                  </form>
-                </div>
-              )}
-
-              {/* Existing reviews */}
-              {otherReviews.length === 0 && !myReview ? (
-                <p className="text-sm text-ink-soft">
-                  No reviews yet. Be the first to share your take.
-                </p>
-              ) : (
-                <ul className="space-y-4">
-                  {otherReviews.map((r) => (
-                    <li
-                      key={r.id}
-                      className="border-b border-brass/20 pb-3 last:border-b-0 last:pb-0"
-                    >
-                      <div className="flex items-center gap-2">
-                        {r.authorImage ? (
-                          <Image
-                            src={r.authorImage}
-                            alt=""
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 rounded-full border border-brass/40"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="h-6 w-6 rounded-full bg-brass/30" />
-                        )}
-                        {r.authorUsername ? (
-                          <Link
-                            href={`/${r.authorUsername}`}
-                            className="text-sm font-medium text-ink hover:text-blood"
-                          >
-                            {r.authorName ?? "Anonymous"}
-                          </Link>
-                        ) : (
-                          <span className="text-sm font-medium text-ink">
-                            {r.authorName ?? "Anonymous"}
-                          </span>
-                        )}
-                        <RatingStars rating={r.rating} />
-                        <span className="ml-auto text-xs text-ink-soft">
-                          {new Date(r.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {r.body && (
-                        <p className="mt-2 whitespace-pre-line text-sm text-ink-soft">
-                          {r.body}
-                        </p>
-                      )}
-                      <div className="mt-2 flex items-center gap-2">
-                        <HelpfulButton
-                          reviewId={r.id}
-                          slug={m.slug}
-                          initialCount={r.helpfulCount}
-                          initialReacting={myReactionIds.has(r.id)}
-                          signedIn={!!viewerId}
-                        />
-                        {viewerId && r.userId !== viewerId && (
-                          <ReportButton
-                            targetType="review"
-                            targetId={r.id}
-                            slug={m.slug}
-                          />
-                        )}
-                        {viewerIsAdmin && (
-                          <AdminRemoveReview
-                            reviewId={r.id}
-                            slug={m.slug}
-                          />
-                        )}
-                      </div>
-                      <CommentThread
-                        reviewId={r.id}
-                        slug={m.slug}
-                        viewerId={viewerId ?? null}
-                        viewerIsAdmin={viewerIsAdmin}
-                        initialComments={(commentsByReview.get(r.id) ?? []).map(
-                          (c) => ({
-                            id: c.id,
-                            reviewId: c.reviewId,
-                            userId: c.userId,
-                            body: c.body,
-                            createdAt: c.createdAt,
-                            deletedAt: c.deletedAt,
-                            authorName: c.authorName,
-                            authorImage: c.authorImage,
-                            authorUsername: c.authorUsername,
-                          })
-                        )}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <ReviewsSection
+              map={{
+                id: m.id,
+                slug: m.slug,
+                ratingCount: m.ratingCount,
+                aiSummary: m.aiSummary,
+                aiSummaryReviewCount: m.aiSummaryReviewCount,
+              }}
+              avgRating={avgRating}
+              reviewSort={reviewSort}
+              viewerId={viewerId}
+              viewerIsAdmin={viewerIsAdmin}
+              myReview={myReview}
+              otherReviews={otherReviews}
+              myReactionIds={myReactionIds}
+              commentsByReview={commentsByReview}
+            />
           </div>
 
           <aside className="space-y-4">
