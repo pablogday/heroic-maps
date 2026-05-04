@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { MapCard } from "@/components/MapCard";
-import type { MapCardData } from "@/lib/maps";
+import { mapCardCols, type MapCardData } from "@/lib/maps";
 import { stagger } from "@/lib/stagger";
 
 type Params = Promise<{ slug: string }>;
@@ -52,23 +52,8 @@ export default async function SeriesPage({
   // Pull every map in the series, ordered by position.
   const rows = await db
     .select({
-      id: maps.id,
-      slug: maps.slug,
-      name: maps.name,
-      description: maps.description,
-      version: maps.version,
-      size: maps.size,
-      humanPlayers: maps.humanPlayers,
-      totalPlayers: maps.totalPlayers,
-      ratingSum: maps.ratingSum,
-      ratingCount: maps.ratingCount,
-      previewKey: maps.previewKey,
-      undergroundPreviewKey: maps.undergroundPreviewKey,
-      hasUnderground: maps.hasUnderground,
-      factions: maps.factions,
-      downloadCount: maps.downloadCount,
+      ...mapCardCols,
       seriesPosition: maps.seriesPosition,
-      isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
       bookmarked: sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`,
     })
     .from(maps)

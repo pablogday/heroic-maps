@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { MapCard } from "@/components/MapCard";
-import type { MapCardData } from "@/lib/maps";
+import { mapCardCols, type MapCardData } from "@/lib/maps";
 import { stagger } from "@/lib/stagger";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -44,24 +44,7 @@ function parseSort(s: string | undefined): Sort {
   return s === "oldest" || s === "name" ? s : "recent";
 }
 
-const cardCols = {
-  id: maps.id,
-  slug: maps.slug,
-  name: maps.name,
-  description: maps.description,
-  version: maps.version,
-  size: maps.size,
-  humanPlayers: maps.humanPlayers,
-  totalPlayers: maps.totalPlayers,
-  ratingSum: maps.ratingSum,
-  ratingCount: maps.ratingCount,
-  previewKey: maps.previewKey,
-  undergroundPreviewKey: maps.undergroundPreviewKey,
-  hasUnderground: maps.hasUnderground,
-  factions: maps.factions,
-  downloadCount: maps.downloadCount,
-  isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
-};
+// MapCard SELECT shape lives in lib/maps.ts as `mapCardCols`.
 
 export default async function LibraryPage({
   searchParams,
@@ -103,7 +86,7 @@ export default async function LibraryPage({
         : desc(userMaps.updatedAt);
 
   const rows = await db
-    .select({ ...cardCols, bookmarked: userMaps.bookmarked })
+    .select({ ...mapCardCols, bookmarked: userMaps.bookmarked })
     .from(userMaps)
     .innerJoin(maps, eq(userMaps.mapId, maps.id))
     .where(where)
@@ -197,7 +180,7 @@ async function PlayedTab({
 
   const rows = await db
     .select({
-      ...cardCols,
+      ...mapCardCols,
       bookmarked: sql<boolean>`false`.as("bookmarked"),
       lastOutcome: recencyByMap.lastOutcome,
       sessionCount: recencyByMap.sessionCount,
@@ -261,122 +244,73 @@ function Shell({
             </p>
           </div>
 
-          {/* Desktop: horizontal tabs above the grid. */}
-          <div className="mb-6 hidden flex-wrap items-end justify-between gap-3 border-b border-brass/40 md:flex">
-            <nav className="flex gap-2" aria-label="Library tabs">
-              {TABS.map((t) => {
-                const active = t.value === activeTab;
-                return (
-                  <Link
-                    key={t.value}
-                    href={`/library?tab=${t.value}`}
-                    aria-current={active ? "page" : undefined}
-                    className={`-mb-px rounded-t border border-b-0 px-4 py-2 text-sm font-display transition-colors ${
-                      active
-                        ? "border-brass bg-parchment text-ink"
-                        : "border-transparent text-ink-soft hover:text-ink"
-                    }`}
-                  >
-                    <span className="mr-1.5">{t.emoji}</span>
-                    {t.label}
-                    <span className="ml-1.5 text-xs text-ink-soft">
-                      {counts[t.value]}
-                    </span>
-                  </Link>
-                );
-              })}
-            </nav>
-            <SortStrip activeTab={activeTab} sort={sort} />
-          </div>
-
-          {/* Desktop: render content directly. */}
-          <div className="hidden md:block">{children}</div>
-
-          {/* Mobile: vertical drawers. Each section is its own row;
-            * the active one expands to show its grid + sort options.
-            * Inactive rows are <Link>s that navigate to that tab on
-            * tap (server reload — keeps state in the URL). */}
-          <div className="space-y-3 md:hidden">
+          {/* Tab nav: horizontal strip on desktop, stacked drawer
+            * rows on mobile. Layout switches via CSS, but the
+            * markup is one tree so we never double-render the
+            * children below. */}
+          <nav
+            aria-label="Library tabs"
+            className="mb-4 flex flex-col gap-2 md:mb-0 md:flex-row md:items-end md:gap-2 md:border-b md:border-brass/40"
+          >
             {TABS.map((t) => {
               const active = t.value === activeTab;
               return (
-                <div
+                <Link
                   key={t.value}
-                  className={`overflow-hidden rounded border ${
+                  href={`/library?tab=${t.value}`}
+                  aria-current={active ? "page" : undefined}
+                  className={[
+                    // Mobile: drawer-row look — full-width pill with
+                    // border + chevron. Active gets brass treatment.
+                    "flex items-center gap-3 rounded border px-4 py-3 transition-colors",
                     active
-                      ? "border-brass bg-parchment-dark/30"
-                      : "border-brass/30"
-                  }`}
+                      ? "border-brass bg-parchment-dark/40 text-ink md:bg-parchment"
+                      : "border-brass/30 text-ink-soft hover:bg-brass/10 hover:text-ink",
+                    // Desktop overrides: collapse the border into a
+                    // bottom-tab look, lose the row chevron, sit in a
+                    // strip below the heading.
+                    "md:-mb-px md:rounded-t md:rounded-b-none md:border-b-0 md:py-2",
+                    active ? "md:border-brass" : "md:border-transparent",
+                  ].join(" ")}
                 >
-                  <DrawerHeader
-                    tab={t}
-                    active={active}
-                    count={counts[t.value]}
-                  />
-                  {active && (
-                    <div className="border-t border-brass/30 px-3 py-4">
-                      <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-                        <span className="text-xs text-ink-soft">Sort:</span>
-                        <SortStrip
-                          activeTab={activeTab}
-                          sort={sort}
-                          compact
-                        />
-                      </div>
-                      {children}
-                    </div>
-                  )}
-                </div>
+                  <span className="text-lg md:text-base" aria-hidden>
+                    {t.emoji}
+                  </span>
+                  <span className="flex-1 font-display text-base md:text-sm">
+                    {t.label}
+                  </span>
+                  <span className="text-xs text-ink-soft">
+                    {counts[t.value]}
+                  </span>
+                  {/* Mobile-only chevron — orients the row as a
+                    * tappable drawer. Hidden on desktop where the
+                    * active-tab style is enough. */}
+                  <span
+                    aria-hidden
+                    className={`text-ink-soft transition-transform md:hidden ${
+                      active ? "rotate-90" : ""
+                    }`}
+                  >
+                    ›
+                  </span>
+                </Link>
               );
             })}
-          </div>
+            {/* Sort strip — pinned to the right of the desktop tab row,
+              * stacks below the drawer rows on mobile. */}
+            <div className="md:ml-auto md:mb-2">
+              <SortStrip activeTab={activeTab} sort={sort} />
+            </div>
+          </nav>
+
+          {/* Single content render — no double DOM, no double image
+            * preload. CSS above swaps how the nav looks; this stays
+            * the same in both layouts. */}
+          <div className="mt-6">{children}</div>
         </PageReveal>
       </main>
       <SiteFooter />
     </div>
-  );
-}
-
-/** Drawer header — clickable when collapsed (links to that tab),
- * static text when active. The chevron rotates to suggest open
- * state. */
-function DrawerHeader({
-  tab,
-  active,
-  count,
-}: {
-  tab: { value: Tab; label: string; emoji: string };
-  active: boolean;
-  count: number;
-}) {
-  const inner = (
-    <div className="flex items-center gap-3 px-4 py-3 text-left">
-      <span className="text-lg" aria-hidden>
-        {tab.emoji}
-      </span>
-      <span className="flex-1 font-display text-base text-ink">
-        {tab.label}
-      </span>
-      <span className="text-xs text-ink-soft">{count}</span>
-      <span
-        aria-hidden
-        className={`text-ink-soft transition-transform ${
-          active ? "rotate-90" : ""
-        }`}
-      >
-        ›
-      </span>
-    </div>
-  );
-  if (active) return <div>{inner}</div>;
-  return (
-    <Link
-      href={`/library?tab=${tab.value}`}
-      aria-label={`Open ${tab.label}`}
-      className="block hover:bg-brass/10"
-    >
-      {inner}
-    </Link>
   );
 }
 

@@ -123,7 +123,11 @@ export function CommentThread({
 
       {viewerId ? (
         <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-1.5">
+          <label htmlFor={`cmt-${reviewId}`} className="sr-only">
+            Add a comment to this review
+          </label>
           <textarea
+            id={`cmt-${reviewId}`}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Add a comment…"

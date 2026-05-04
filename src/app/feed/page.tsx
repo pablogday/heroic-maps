@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { PageReveal } from "@/components/PageReveal";
 import { EmptyState } from "@/components/EmptyState";
+import { RatingStars } from "@/components/RatingStars";
 import { getRecentlyAdded, getRecentlyReviewed } from "@/lib/maps";
 import { formatRelativeTime } from "@/lib/relative-time";
 
@@ -177,12 +178,7 @@ function ReviewedItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="truncate font-display text-ink">{item.name}</span>
-            <span className="text-xs text-brass">
-              {"★".repeat(item.rating)}
-              <span className="text-ink-soft/30">
-                {"★".repeat(5 - item.rating)}
-              </span>
-            </span>
+            <RatingStars rating={item.rating} />
           </div>
           <div className="text-xs text-ink-soft">
             {item.authorName ?? "Anonymous"} · {formatRelativeTime(item.ts)}

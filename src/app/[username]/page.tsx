@@ -19,7 +19,8 @@ import { MapCard } from "@/components/MapCard";
 import { stagger } from "@/lib/stagger";
 import { FACTION_LABEL, type Faction } from "@/lib/factions";
 import { RESERVED_USERNAMES } from "@/lib/reserved-usernames";
-import type { MapCardData } from "@/lib/maps";
+import { mapCardCols, type MapCardData } from "@/lib/maps";
+import { RatingStars } from "@/components/RatingStars";
 
 type Params = Promise<{ username: string }>;
 
@@ -30,23 +31,9 @@ const OUTCOME_COLOR = {
   abandoned: "text-ink-soft",
 };
 
-const cardCols = {
-  id: maps.id,
-  slug: maps.slug,
-  name: maps.name,
-  description: maps.description,
-  version: maps.version,
-  size: maps.size,
-  humanPlayers: maps.humanPlayers,
-  totalPlayers: maps.totalPlayers,
-  ratingSum: maps.ratingSum,
-  ratingCount: maps.ratingCount,
-  previewKey: maps.previewKey,
-  undergroundPreviewKey: maps.undergroundPreviewKey,
-  hasUnderground: maps.hasUnderground,
-  factions: maps.factions,
-  downloadCount: maps.downloadCount,
-};
+// MapCard SELECT shape lives in lib/maps.ts as `mapCardCols`. We use
+// it directly below; alias kept terse with a local rename.
+const cardCols = mapCardCols;
 
 async function loadUser(username: string) {
   if (RESERVED_USERNAMES.has(username)) return null;
@@ -333,12 +320,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
                       >
                         {r.mapName}
                       </Link>
-                      <span className="text-brass">
-                        {"★".repeat(r.rating)}
-                        <span className="text-ink-soft/30">
-                          {"★".repeat(5 - r.rating)}
-                        </span>
-                      </span>
+                      <RatingStars rating={r.rating} />
                       <span className="ml-auto text-xs text-ink-soft">
                         {new Date(r.createdAt).toLocaleDateString()}
                       </span>

@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { reviews, reviewReactions, maps } from "@/db/schema";
+import { requireUserId } from "@/lib/auth-helpers";
 
 const MIN_BODY = 0; // body is optional
 const MAX_BODY = 4000;
@@ -18,8 +18,8 @@ export async function submitReview(
   body: string,
   slug: string
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "Sign in required." };
+  const r = await requireUserId();
+  if (!r.ok) return r;
 
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return { ok: false, error: "Rating must be 1–5." };
@@ -41,7 +41,7 @@ export async function submitReview(
     .where(
       and(
         eq(reviews.mapId, mapId),
-        eq(reviews.userId, session.user.id)
+        eq(reviews.userId, r.userId)
       )
     )
     .limit(1);
@@ -51,7 +51,7 @@ export async function submitReview(
       .from(reviews)
       .where(
         and(
-          eq(reviews.userId, session.user.id),
+          eq(reviews.userId, r.userId),
           sql`${reviews.createdAt} > now() - interval '${sql.raw(
             String(RATE_LIMIT_WINDOW_SECONDS)
           )} seconds'`
@@ -76,7 +76,7 @@ export async function submitReview(
       .insert(reviews)
       .values({
         mapId,
-        userId: session.user!.id,
+        userId: r.userId,
         rating,
         body: trimmed || null,
       })
@@ -115,9 +115,9 @@ export async function toggleReviewHelpful(
   | { ok: true; helpfulCount: number; reacting: boolean }
   | { ok: false; error: string }
 > {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) return { ok: false, error: "Sign in required." };
+  const r = await requireUserId();
+  if (!r.ok) return r;
+  const { userId } = r;
 
   const result = await db.transaction(async (tx) => {
     const [existing] = await tx
@@ -170,15 +170,13 @@ export async function deleteReview(
   mapId: number,
   slug: string
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "Sign in required." };
+  const r = await requireUserId();
+  if (!r.ok) return r;
 
   await db.transaction(async (tx) => {
     const deleted = await tx
       .delete(reviews)
-      .where(
-        and(eq(reviews.id, reviewId), eq(reviews.userId, session.user!.id))
-      )
+      .where(and(eq(reviews.id, reviewId), eq(reviews.userId, r.userId)))
       .returning({ id: reviews.id });
 
     if (deleted.length === 0) return; // not yours; silently ignore

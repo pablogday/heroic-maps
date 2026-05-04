@@ -8,6 +8,8 @@ import { isAdmin } from "@/lib/admin";
 import { CommentThread } from "./CommentThread";
 import { ReportButton } from "./ReportButton";
 import { AdminRemoveReview } from "./AdminRemoveReview";
+import { RatingStars } from "@/components/RatingStars";
+import { SectionCard } from "@/components/SectionCard";
 import { getSeriesContext, getSimilarMaps } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { MapCard } from "@/components/MapCard";
@@ -60,13 +62,7 @@ function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="card-brass rounded p-5">
-      <div className="mb-3 flex items-center gap-1.5">
-        <h3 className="font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-          Map contents
-        </h3>
-        <ParserSourceLink />
-      </div>
+    <SectionCard title="Map contents" trailing={<ParserSourceLink />}>
       <dl className="space-y-1.5 text-sm">
         {rows.map(([key, label, n]) => (
           <div key={key} className="flex items-center justify-between gap-2">
@@ -78,7 +74,7 @@ function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
           </div>
         ))}
       </dl>
-    </div>
+    </SectionCard>
   );
 }
 
@@ -580,12 +576,7 @@ export default async function MapDetailPage({
                             {r.authorName ?? "Anonymous"}
                           </span>
                         )}
-                        <span className="text-xs text-brass">
-                          {"★".repeat(r.rating)}
-                          <span className="text-ink-soft/30">
-                            {"★".repeat(5 - r.rating)}
-                          </span>
-                        </span>
+                        <RatingStars rating={r.rating} />
                         <span className="ml-auto text-xs text-ink-soft">
                           {new Date(r.createdAt).toLocaleDateString()}
                         </span>
@@ -720,10 +711,7 @@ export default async function MapDetailPage({
             />
 
             {sessionStats.total > 0 && (
-              <div className="card-brass rounded p-5">
-                <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-                  Playthroughs
-                </h3>
+              <SectionCard title="Playthroughs">
                 <p className="text-sm text-ink">
                   <span className="font-medium">{sessionStats.total}</span>{" "}
                   logged ·{" "}
@@ -743,7 +731,7 @@ export default async function MapDetailPage({
                     </span>
                   </p>
                 )}
-              </div>
+              </SectionCard>
             )}
 
             {m.objectStats != null &&
@@ -755,10 +743,7 @@ export default async function MapDetailPage({
             ) : null}
 
             {(m.victoryCondition || m.lossCondition) && (
-              <div className="card-brass rounded p-5">
-                <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-                  Conditions
-                </h3>
+              <SectionCard title="Conditions">
                 <dl className="space-y-3 text-sm">
                   {m.victoryCondition && (
                     <div className="flex items-start gap-3">
@@ -791,14 +776,11 @@ export default async function MapDetailPage({
                     </div>
                   )}
                 </dl>
-              </div>
+              </SectionCard>
             )}
 
             {m.factions && m.factions.length > 0 && (
-              <div className="card-brass rounded p-5">
-                <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-                  Towns
-                </h3>
+              <SectionCard title="Towns">
                 {/* Explicit 5-column grid on desktop, 3 across on
                  * narrow screens. Cells share remaining space evenly
                  * via minmax(0,1fr) so labels can shrink without
@@ -817,13 +799,10 @@ export default async function MapDetailPage({
                     </li>
                   ))}
                 </ul>
-              </div>
+              </SectionCard>
             )}
 
-            <div className="card-brass rounded p-5">
-              <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
-                Origin
-              </h3>
+            <SectionCard title="Origin">
               <dl className="space-y-1.5 text-sm">
                 <Stat
                   icon="calendar"
@@ -853,7 +832,7 @@ export default async function MapDetailPage({
                   </div>
                 )}
               </dl>
-            </div>
+            </SectionCard>
           </aside>
         </div>
 

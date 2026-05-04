@@ -12,6 +12,7 @@ import Image from "next/image";
 import { getRecentlyAdded, getRecentlyReviewed } from "@/lib/maps";
 import { versionLabel } from "@/lib/map-constants";
 import { formatRelativeTime } from "@/lib/relative-time";
+import { RatingStars } from "./RatingStars";
 
 const ROW_COUNT = 4;
 
@@ -94,9 +95,7 @@ export async function RecentlyReviewedCard() {
                     <span className="truncate text-sm font-medium text-ink">
                       {r.mapName}
                     </span>
-                    <span className="text-xs text-brass">
-                      {"★".repeat(r.rating)}
-                    </span>
+                    <RatingStars rating={r.rating} />
                   </div>
                   <div className="text-xs text-ink-soft">
                     {r.authorName ?? "Anonymous"} ·{" "}

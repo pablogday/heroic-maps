@@ -2,10 +2,10 @@
 
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { comments, reviews, maps } from "@/db/schema";
 import { isAdmin } from "@/lib/admin";
+import { requireUserId } from "@/lib/auth-helpers";
 
 export type ActionResult<T = void> =
   | { ok: true; data?: T }
@@ -22,9 +22,9 @@ export async function createComment(input: {
   body: string;
   slug: string;
 }): Promise<ActionResult<{ id: number }>> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) return { ok: false, error: "Sign in to comment." };
+  const auth = await requireUserId("Sign in to comment.");
+  if (!auth.ok) return auth;
+  const { userId } = auth;
 
   const body = input.body.trim();
   if (!body) return { ok: false, error: "Comment can't be empty." };
@@ -70,9 +70,9 @@ export async function deleteComment(input: {
   commentId: number;
   slug: string;
 }): Promise<ActionResult> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) return { ok: false, error: "Sign in required." };
+  const auth = await requireUserId();
+  if (!auth.ok) return auth;
+  const { userId } = auth;
 
   const [c] = await db
     .select({ id: comments.id, userId: comments.userId })

@@ -37,7 +37,15 @@ const PAGE_SIZE = 24;
  * file returns rows compatible with `MapCardData` so the UI has a single
  * source of truth for what a card needs.
  */
-const cardCols = {
+/**
+ * Canonical SELECT shape for any list query that feeds `<MapCard>`.
+ * Exported so other pages (`/library`, `/series/[slug]`, `/[username]`,
+ * the cron job, etc.) can use the same shape without duplicating
+ * fifteen-column lists.
+ *
+ * Pair with `MapCardData` below — they always evolve together.
+ */
+export const mapCardCols = {
   id: maps.id,
   slug: maps.slug,
   name: maps.name,
@@ -57,6 +65,9 @@ const cardCols = {
   // by MapCard to flip the "Campaign" badge.
   isCampaign: sql<boolean>`(${maps.campaignData} IS NOT NULL)`,
 };
+
+// Internal alias used throughout this file for terseness.
+const cardCols = mapCardCols;
 
 export type MapCardData = {
   id: number;

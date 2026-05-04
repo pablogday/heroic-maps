@@ -2,10 +2,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { reports, reviews, comments, maps } from "@/db/schema";
-import { isAdmin } from "@/lib/admin";
+import { requireAdminId, requireUserId } from "@/lib/auth-helpers";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -19,9 +18,9 @@ export async function reportContent(input: {
   reason: string;
   slug: string;
 }): Promise<ActionResult> {
-  const session = await auth();
-  const reporterId = session?.user?.id;
-  if (!reporterId) return { ok: false, error: "Sign in to report." };
+  const auth = await requireUserId("Sign in to report.");
+  if (!auth.ok) return auth;
+  const reporterId = auth.userId;
 
   const reason = input.reason.trim().slice(0, MAX_REASON);
   if (!reason) return { ok: false, error: "Add a short reason." };
@@ -67,9 +66,8 @@ export async function adminSoftDeleteReview(input: {
   reviewId: number;
   slug: string;
 }): Promise<ActionResult> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!isAdmin(userId)) return { ok: false, error: "Not allowed." };
+  const r = await requireAdminId();
+  if (!r.ok) return r;
 
   await db
     .update(reviews)
@@ -96,9 +94,8 @@ export async function adminSoftDeleteComment(input: {
   commentId: number;
   slug: string;
 }): Promise<ActionResult> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!isAdmin(userId)) return { ok: false, error: "Not allowed." };
+  const r = await requireAdminId();
+  if (!r.ok) return r;
 
   await db
     .update(comments)
@@ -125,9 +122,8 @@ export async function adminDismissReports(input: {
   targetType: "review" | "comment";
   targetId: number;
 }): Promise<ActionResult> {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!isAdmin(userId)) return { ok: false, error: "Not allowed." };
+  const r = await requireAdminId();
+  if (!r.ok) return r;
 
   await db
     .update(reports)
