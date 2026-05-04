@@ -50,7 +50,6 @@ _(nothing active)_
 - [ ] "Tell me about this map" chat — Q&A on detail pages grounded in description + reviews (~2 hr)
 - [ ] Playstyle filter (story / playable / sandbox / unknown) — heuristic now (30 min) → AI refine later
 - [ ] Rate-limit review submissions (one per minute per user, 30 min)
-- [ ] Light moderation: soft-delete reviews, report button, simple admin allow-list (~2 hr)
 - [ ] Better empty states for `/feed`, `/library`, `/stats` matching `/maps` parchment loader (30 min)
 - [ ] Review reactions (👍 / "this helped", 1 hr)
 - [ ] Themed confirm-delete modal instead of native `confirm()` (45 min)
@@ -60,7 +59,6 @@ _(nothing active)_
 - [ ] Map preview lightbox — click minimap → fullscreen viewer with zoom + pan + surface/underground toggle
 - [ ] Diff view between map versions (when uploaders revise a map)
 - [ ] Embed widget — `<iframe src="/embed/maps/slug">` for Discord servers / blogs
-- [ ] Comments thread under reviews (small, no nesting)
 - [ ] Share-a-screenshot — let users attach in-game screenshots to reviews
 
 ## Open UX items (flagged, not re-confirmed)
@@ -83,6 +81,7 @@ _(nothing active)_
 
 ## Shipped
 
+- **Comments + light moderation** — flat comment thread under each review, signed-in users can post, authors hard-delete, admins soft-delete. Per-review and per-comment "Report" affordance with inline reason form (one report per reporter+target). Soft-deleted reviews/comments stay in DB but render as placeholders. Admin allow-list via `ADMIN_USER_IDS` env var. New `/admin/reports` queue lists every unresolved report with content, reporter, and a link to the map for moderation actions.
 - **Play journal** — `play_sessions` table + `playSessions.ts` actions + `<PlayJournal>` component on map detail. Multiple sessions per user-map (faction, outcome, in-game days, notes, public/private). "Your history with this map" inline list with edit/delete. Aggregate "Playthroughs" stats card (total / won / lost / abandoned + top winning faction). `/library?tab=played` shows distinct maps sorted by latest session, with replay count.
 - **#7 Real upload** — `/upload` accepts `.h3m`/`.h3c`/`.zip` (≤8 MB), validates metadata, uploads to R2 at `maps/uploaded/<slug>.<ext>`, writes `maps` row tied to `uploaderId`, redirects to detail page. 5 uploads/day per user. Auto-fill on file select (parser v0.5).
 - Scaffold + retro-modern theme + landing page
