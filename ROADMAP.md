@@ -31,7 +31,7 @@ _(nothing active)_
     - [ ] Extract from Next.js app: own package boundary, no `postgres`/`dotenv` leakage, ESM + CJS builds, `.d.ts`
     - [ ] README, API docs, examples
   - **Discipline:** every version bump must run `npm run h3m:coverage` and not regress the previous version's parse-success rate without a deliberate reason.
-- [ ] **#6 AI series detection pass** — Long tail the heuristic missed (~95% of maps still untagged for series).
+- [x] **#6 AI series detection pass** — `scripts/detect-series-ai.ts` with Claude Haiku validation over name-prefix candidate clusters. Doubled series coverage: 52 → 93 series, 130 → 244 maps tagged. New finds include real fan-made campaigns the regex missed: "Father's Legacy" (8), "Art of War" (6), "Heroes Masters" (5), "Black Sails" (4), "Threads of Fate" (3 RU sequels), etc. Cost: ~$1 in Haiku tokens. Further gains would need a different signal — most remaining maps don't share enough name structure with another map to form prefix clusters. Embedding-based clustering is the next lever if we want to push past ~10% coverage.
 - [ ] **#16 Public API + RSS feed** — `/api/v1/maps`, `/api/v1/maps/{slug}`, `/api/v1/maps/{slug}/reviews`, `/api/v1/factions/{name}`, `/feed.rss`, `/feed.atom`. Same repo, versioned, rate-limited (Upstash or Vercel edge), CDN-cached, documented at `/api`. (~2 days max)
 - [x] **Public user profiles at `/[username]`** — bare-handle URLs (Twitter/GitHub style) with reserved-username list to protect existing routes. Auto-generates handle from Discord name on first sign-in; `/settings` lets users edit it + bio. Profile page shows avatar, name, bio, joined date, stat strip, uploaded maps, recent playthroughs (private hidden from non-owners), recent reviews, favorites. Review authors on map detail pages now link to profiles.
 
@@ -49,11 +49,9 @@ _(nothing active)_
 - [ ] Smart search (Claude NL → SQL): "small map for 2 players, no underground" → SQL filter (~2 hr)
 - [ ] "Tell me about this map" chat — Q&A on detail pages grounded in description + reviews (~2 hr)
 - [ ] Playstyle filter (story / playable / sandbox / unknown) — heuristic now (30 min) → AI refine later
-- [ ] Per-map JSON-LD for SEO (30 min)
 - [ ] Rate-limit review submissions (one per minute per user, 30 min)
 - [ ] Light moderation: soft-delete reviews, report button, simple admin allow-list (~2 hr)
 - [ ] Better empty states for `/feed`, `/library`, `/stats` matching `/maps` parchment loader (30 min)
-- [ ] Reviewer leaderboard on `/stats` (top 10 reviewers this month, 30 min)
 - [ ] Review reactions (👍 / "this helped", 1 hr)
 - [ ] Themed confirm-delete modal instead of native `confirm()` (45 min)
 - [ ] Skeleton placeholders inside homepage activity strip (20 min)
@@ -64,7 +62,6 @@ _(nothing active)_
 - [ ] Embed widget — `<iframe src="/embed/maps/slug">` for Discord servers / blogs
 - [ ] Comments thread under reviews (small, no nesting)
 - [ ] Share-a-screenshot — let users attach in-game screenshots to reviews
-- [ ] Random map button — `/maps/random` redirects to a weighted-random map (~10 lines)
 
 ## Open UX items (flagged, not re-confirmed)
 
