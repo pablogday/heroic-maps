@@ -2,75 +2,44 @@
 
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { userMaps } from "@/db/schema";
+import { requireUserId } from "@/lib/auth-helpers";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
-  return session.user.id;
-}
-
-async function setFlag(
-  userId: string,
-  mapId: number,
-  flag: "favorited" | "bookmarked",
-  value: boolean
-) {
-  await db
-    .insert(userMaps)
-    .values({
-      userId,
-      mapId,
-      favorited: flag === "favorited" ? value : false,
-      bookmarked: flag === "bookmarked" ? value : false,
-    })
-    .onConflictDoUpdate({
-      target: [userMaps.userId, userMaps.mapId],
-      set: {
-        [flag]: value,
-        updatedAt: new Date(),
-      },
-    });
-
-  // Garbage-collect rows where neither flag is set. Played sessions
-  // live in `play_sessions` now, so this row carries no state.
-  await db
-    .delete(userMaps)
-    .where(
-      and(
-        eq(userMaps.userId, userId),
-        eq(userMaps.mapId, mapId),
-        eq(userMaps.favorited, false),
-        eq(userMaps.bookmarked, false)
-      )
-    );
-}
-
-export async function toggleFavorite(
-  mapId: number,
-  slug: string,
-  next: boolean
-): Promise<ActionResult> {
-  const userId = await requireUser();
-  if (!userId) return { ok: false, error: "Sign in required." };
-  await setFlag(userId, mapId, "favorited", next);
-  revalidatePath(`/maps/${slug}`);
-  revalidatePath("/library");
-  return { ok: true };
-}
-
+/**
+ * Set or clear the bookmarked flag for a (user, map) pair. Replaces
+ * the previous toggleFavorite + toggleBookmark pair after the Path-1
+ * collapse — see migration 0011 for context.
+ *
+ * The user_maps row is garbage-collected when bookmarked drops to
+ * false (the row carries no other state — playthroughs live in
+ * play_sessions).
+ */
 export async function toggleBookmark(
   mapId: number,
   slug: string,
   next: boolean
 ): Promise<ActionResult> {
-  const userId = await requireUser();
-  if (!userId) return { ok: false, error: "Sign in required." };
-  await setFlag(userId, mapId, "bookmarked", next);
+  const r = await requireUserId();
+  if (!r.ok) return r;
+  const userId = r.userId;
+
+  if (next) {
+    await db
+      .insert(userMaps)
+      .values({ userId, mapId, bookmarked: true })
+      .onConflictDoUpdate({
+        target: [userMaps.userId, userMaps.mapId],
+        set: { bookmarked: true, updatedAt: new Date() },
+      });
+  } else {
+    await db
+      .delete(userMaps)
+      .where(and(eq(userMaps.userId, userId), eq(userMaps.mapId, mapId)));
+  }
+
   revalidatePath(`/maps/${slug}`);
   revalidatePath("/library");
   return { ok: true };

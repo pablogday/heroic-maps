@@ -62,7 +62,7 @@ export function PlayJournal({
   initial: JournalSession[];
   /** The factions the map allows — limits the dropdown when present. */
   mapFactions: string[] | null;
-  initialLibrary: { favorited: boolean; bookmarked: boolean };
+  initialLibrary: { bookmarked: boolean };
 }) {
   const [sessions, setSessions] = useState(initial);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);

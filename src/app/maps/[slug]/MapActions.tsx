@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toggleFavorite, toggleBookmark } from "@/app/actions/library";
-import { IconBookmark, IconFavorite, IconPlayed } from "@/components/nav-icons";
+import { toggleBookmark } from "@/app/actions/library";
+import { IconBookmark, IconPlayed } from "@/components/nav-icons";
 
+/**
+ * Sidebar actions on the map detail page. Two buttons since the
+ * Path-1 collapse: Bookmark (private save) + Played (open the
+ * playthrough journal). Favorite was folded into Bookmark in
+ * migration 0011 — see schema.ts.
+ */
 export function MapActions({
   mapId,
   slug,
@@ -13,41 +19,15 @@ export function MapActions({
 }: {
   mapId: number;
   slug: string;
-  initial: { favorited: boolean; bookmarked: boolean };
+  initial: { bookmarked: boolean };
   hasPlayed: boolean;
   onLogClick: () => void;
 }) {
-  const [favorited, setFav] = useState(initial.favorited);
   const [bookmarked, setBm] = useState(initial.bookmarked);
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <button
-        type="button"
-        aria-pressed={favorited}
-        disabled={pending}
-        onClick={() => {
-          const next = !favorited;
-          setFav(next);
-          startTransition(async () => {
-            const res = await toggleFavorite(mapId, slug, next);
-            if (!res.ok) setFav(!next);
-          });
-        }}
-        className={`rounded border px-2 py-2 text-xs font-display transition-colors ${
-          favorited
-            ? "border-blood bg-blood/15 text-blood"
-            : "border-brass/50 text-ink-soft hover:bg-brass/15 hover:text-ink"
-        }`}
-        title={favorited ? "Remove from favorites" : "Add to favorites"}
-      >
-        <span className="mx-auto block w-fit">
-          <IconFavorite size={18} />
-        </span>
-        <span className="mt-1 block">Favorite</span>
-      </button>
-
+    <div className="grid grid-cols-2 gap-2">
       <button
         type="button"
         aria-pressed={bookmarked}

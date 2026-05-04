@@ -440,8 +440,10 @@ export const mapTagsRelations = relations(mapTags, ({ one }) => ({
 }));
 
 /**
- * Per-(user, map) tracking: favorite, bookmark, and played status.
- * One row per relationship — when all flags clear we delete the row.
+ * Per-(user, map) bookmark state. One row per (user, map) when the
+ * map is bookmarked; the row is deleted when the user un-bookmarks.
+ * Played sessions live in `play_sessions` — this table no longer
+ * carries that state.
  */
 export const userMaps = pgTable(
   "user_maps",
@@ -453,7 +455,10 @@ export const userMaps = pgTable(
       .notNull()
       .references(() => maps.id, { onDelete: "cascade" }),
 
-    favorited: boolean("favorited").notNull().default(false),
+    /** Single "save for later" flag. The original schema also had a
+     * `favorited` flag but it was functionally redundant — both
+     * stored a private boolean on the same row. Migration 0011
+     * merged favorited rows into bookmarked and dropped the column. */
     bookmarked: boolean("bookmarked").notNull().default(false),
 
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -465,7 +470,6 @@ export const userMaps = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.mapId] }),
-    index("user_maps_user_fav_idx").on(t.userId, t.favorited),
     index("user_maps_user_bookmark_idx").on(t.userId, t.bookmarked),
   ]
 );

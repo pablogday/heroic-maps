@@ -14,18 +14,13 @@ import { EmptyState } from "@/components/EmptyState";
 
 export const metadata = {
   title: "Library — Heroic Maps",
-  description: "Your favorites, bookmarks, and playthroughs.",
+  description: "Your bookmarks and playthroughs.",
 };
 
-import {
-  IconBookmark,
-  IconFavorite,
-  IconPlayed,
-} from "@/components/nav-icons";
+import { IconBookmark, IconPlayed } from "@/components/nav-icons";
 
-type Tab = "favorites" | "bookmarks" | "played";
+type Tab = "bookmarks" | "played";
 const TABS: { value: Tab; label: string; Icon: () => React.ReactElement }[] = [
-  { value: "favorites", label: "Favorites", Icon: IconFavorite },
   { value: "bookmarks", label: "Bookmarks", Icon: IconBookmark },
   { value: "played", label: "Played", Icon: IconPlayed },
 ];
@@ -65,8 +60,7 @@ export default async function LibraryPage({
   }
 
   const sp = await searchParams;
-  const tab: Tab =
-    sp.tab === "bookmarks" || sp.tab === "played" ? sp.tab : "favorites";
+  const tab: Tab = sp.tab === "played" ? "played" : "bookmarks";
   const sort = parseSort(sp.sort);
 
   // Cheap counts for the mobile drawer headers + desktop tab badges.
@@ -79,10 +73,10 @@ export default async function LibraryPage({
     );
   }
 
-  const where =
-    tab === "favorites"
-      ? and(eq(userMaps.userId, userId), eq(userMaps.favorited, true))
-      : and(eq(userMaps.userId, userId), eq(userMaps.bookmarked, true));
+  const where = and(
+    eq(userMaps.userId, userId),
+    eq(userMaps.bookmarked, true)
+  );
 
   const orderBy =
     sort === "oldest"
@@ -92,11 +86,7 @@ export default async function LibraryPage({
         : desc(userMaps.updatedAt);
 
   const rows = await db
-    .select({
-      ...mapCardCols,
-      bookmarked: userMaps.bookmarked,
-      favorited: userMaps.favorited,
-    })
+    .select({ ...mapCardCols, bookmarked: userMaps.bookmarked })
     .from(userMaps)
     .innerJoin(maps, eq(userMaps.mapId, maps.id))
     .where(where)
@@ -124,30 +114,25 @@ export default async function LibraryPage({
 }
 
 interface LibraryCounts {
-  favorites: number;
   bookmarks: number;
   played: number;
 }
 
 async function getLibraryCounts(userId: string): Promise<LibraryCounts> {
-  const [favBook] = await db
+  const [book] = await db
     .select({
-      favorites: sql<number>`count(*) FILTER (WHERE ${userMaps.favorited})::int`,
       bookmarks: sql<number>`count(*) FILTER (WHERE ${userMaps.bookmarked})::int`,
     })
     .from(userMaps)
     .where(eq(userMaps.userId, userId));
 
   const [played] = await db
-    .select({
-      n: sql<number>`count(DISTINCT ${playSessions.mapId})::int`,
-    })
+    .select({ n: sql<number>`count(DISTINCT ${playSessions.mapId})::int` })
     .from(playSessions)
     .where(eq(playSessions.userId, userId));
 
   return {
-    favorites: favBook?.favorites ?? 0,
-    bookmarks: favBook?.bookmarks ?? 0,
+    bookmarks: book?.bookmarks ?? 0,
     played: played?.n ?? 0,
   };
 }
@@ -188,15 +173,13 @@ async function PlayedTab({
         ? asc(maps.name)
         : desc(recencyByMap.lastPlayed);
 
-  // LEFT JOIN userMaps so cards on the Played tab can still surface
-  // the viewer's bookmark / favorite state. Without this the toggle
-  // buttons render as "not set" even when the row is set, which leads
-  // to a misleading click.
+  // LEFT JOIN userMaps so cards on the Played tab still surface the
+  // viewer's bookmark state. Without this the toggle button renders
+  // as "not set" even when the row is set, which is a misleading click.
   const rows = await db
     .select({
       ...mapCardCols,
       bookmarked: sql<boolean>`COALESCE(${userMaps.bookmarked}, false)`,
-      favorited: sql<boolean>`COALESCE(${userMaps.favorited}, false)`,
       lastOutcome: recencyByMap.lastOutcome,
       sessionCount: recencyByMap.sessionCount,
     })
@@ -371,16 +354,6 @@ function SortStrip({
 }
 
 function EmptyMessage({ tab }: { tab: Tab }) {
-  if (tab === "favorites") {
-    return (
-      <EmptyState
-        icon={<IconFavorite size={42} />}
-        title="No treasures favored yet"
-        body="Tap the heart on any map to keep it close at hand."
-        cta={{ href: "/maps", label: "Browse maps" }}
-      />
-    );
-  }
   if (tab === "bookmarks") {
     return (
       <EmptyState
@@ -409,7 +382,7 @@ function SignedOut() {
         <div className="card-brass max-w-md rounded p-8 text-center">
           <h1 className="font-display text-2xl text-ink">Your Library</h1>
           <p className="mt-3 text-ink-soft">
-            Sign in to track favorites, bookmarks, and the maps you&apos;ve
+            Sign in to track bookmarks and the maps you&apos;ve
             played.
           </p>
           <form action={signInDiscord} className="mt-5">

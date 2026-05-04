@@ -172,21 +172,16 @@ export default async function MapDetailPage({
     getSeriesContext(m.id),
   ]);
 
-  // Library state (favorite/bookmark) for this user/map.
+  // Library state for this user/map. Single bookmark flag now —
+  // see Path-1 collapse in migration 0011.
   const [libRow] = viewerId
     ? await db
-        .select({
-          favorited: userMaps.favorited,
-          bookmarked: userMaps.bookmarked,
-        })
+        .select({ bookmarked: userMaps.bookmarked })
         .from(userMaps)
         .where(and(eq(userMaps.userId, viewerId), eq(userMaps.mapId, m.id)))
         .limit(1)
     : [undefined];
-  const libState = {
-    favorited: libRow?.favorited ?? false,
-    bookmarked: libRow?.bookmarked ?? false,
-  };
+  const libState = { bookmarked: libRow?.bookmarked ?? false };
 
   // Viewer's play sessions for this map.
   const mySessions = viewerId
@@ -489,7 +484,7 @@ export default async function MapDetailPage({
                 </div>
               ) : (
                 <p className="mt-4 text-center text-[11px] text-ink-soft">
-                  Sign in to favorite, bookmark, or log a playthrough.
+                  Sign in to bookmark or log a playthrough.
                 </p>
               )}
               <dl className="mt-4 space-y-2 text-sm">

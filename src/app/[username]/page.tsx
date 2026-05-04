@@ -77,7 +77,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
   const session = await auth();
   const isOwner = session?.user?.id === profile.id;
 
-  const [reviewRows, sessionRows, favoriteMaps, uploadedMaps, stats] =
+  const [reviewRows, sessionRows, bookmarkedMaps, uploadedMaps, stats] =
     await Promise.all([
       // Recent reviews
       db
@@ -118,7 +118,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
         )
         .orderBy(desc(playSessions.playedAt))
         .limit(20),
-      // Favorites
+      // Bookmarked maps (formerly two lists, collapsed in 0011)
       db
         .select(cardCols)
         .from(userMaps)
@@ -126,7 +126,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
         .where(
           and(
             eq(userMaps.userId, profile.id),
-            eq(userMaps.favorited, true)
+            eq(userMaps.bookmarked, true)
           )
         )
         .orderBy(desc(userMaps.updatedAt))
@@ -336,12 +336,12 @@ export default async function ProfilePage({ params }: { params: Params }) {
             </section>
           )}
 
-          {/* Favorites */}
-          {favoriteMaps.length > 0 && (
+          {/* Bookmarks (saved-for-later) */}
+          {bookmarkedMaps.length > 0 && (
             <section className="mb-8">
-              <h2 className="mb-3 font-display text-xl text-ink">Favorites</h2>
+              <h2 className="mb-3 font-display text-xl text-ink">Bookmarks</h2>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {favoriteMaps.map((m, i) => (
+                {bookmarkedMaps.map((m, i) => (
                   <MapCard
                     key={m.id}
                     map={m as MapCardData}
