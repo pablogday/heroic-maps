@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toggleBookmark } from "@/app/actions/library";
 import { IconBookmark, IconPlayed } from "@/components/nav-icons";
+import { toast } from "@/lib/toast";
 
 /**
  * Sidebar actions on the map detail page. Two buttons since the
@@ -37,7 +38,12 @@ export function MapActions({
           setBm(next);
           startTransition(async () => {
             const res = await toggleBookmark(mapId, slug, next);
-            if (!res.ok) setBm(!next);
+            if (!res.ok) {
+              setBm(!next);
+              toast.error(res.error);
+              return;
+            }
+            toast.info(next ? "Bookmarked." : "Bookmark removed.", 2000);
           });
         }}
         className={`rounded border px-2 py-2 text-xs font-display transition-colors ${

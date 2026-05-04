@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/playSessions";
 import { FACTIONS, FACTION_LABEL, type Faction } from "@/lib/factions";
 import { confirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "@/lib/toast";
 
 export interface JournalSession {
   id: number;
@@ -115,6 +116,7 @@ export function PlayJournal({
         const res = await logPlaySession(payload);
         if (!res.ok) {
           setError(res.error);
+          toast.error(res.error);
           return;
         }
         const optimistic: JournalSession = {
@@ -127,10 +129,12 @@ export function PlayJournal({
           isPublic: payload.isPublic,
         };
         setSessions((prev) => [optimistic, ...prev]);
+        toast.success("Playthrough logged.");
       } else if (editingId !== null) {
         const res = await updatePlaySession(editingId, slug, payload);
         if (!res.ok) {
           setError(res.error);
+          toast.error(res.error);
           return;
         }
         setSessions((prev) =>
@@ -147,6 +151,7 @@ export function PlayJournal({
               : s
           )
         );
+        toast.success("Playthrough updated.");
       }
       setEditingId(null);
     });
@@ -162,8 +167,12 @@ export function PlayJournal({
     if (!ok) return;
     startTransition(async () => {
       const res = await deletePlaySession(id, slug);
-      if (!res.ok) return;
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
       setSessions((prev) => prev.filter((s) => s.id !== id));
+      toast.info("Playthrough deleted.");
     });
   };
 

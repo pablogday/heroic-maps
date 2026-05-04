@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { signIn } from "next-auth/react";
 import { toggleBookmark } from "@/app/actions/library";
+import { toast } from "@/lib/toast";
 
 /**
  * Compact bookmark toggle used inside cards. Optimistic with rollback,
@@ -45,7 +46,15 @@ export function BookmarkButton({
         setBookmarked(next);
         startTransition(async () => {
           const res = await toggleBookmark(mapId, slug, next);
-          if (!res.ok) setBookmarked(!next);
+          if (!res.ok) {
+            setBookmarked(!next);
+            toast.error(res.error);
+            return;
+          }
+          // Short, low-friction confirmation. Especially useful on
+          // /library?tab=bookmarks where the row disappears on un-
+          // bookmark — the toast explains the disappearance.
+          toast.info(next ? "Bookmarked." : "Bookmark removed.", 2000);
         });
       }}
       className={`inline-flex h-9 w-9 items-center justify-center rounded border transition-colors ${

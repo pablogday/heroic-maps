@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateProfile } from "@/app/actions/profile";
+import { toast } from "@/lib/toast";
 
 export function SettingsForm({
   initial,
@@ -22,11 +23,14 @@ export function SettingsForm({
     setSuccess(false);
     startTransition(async () => {
       const res = await updateProfile(username, bio);
-      if (!res.ok) setError(res.error);
-      else {
-        setSuccess(true);
-        router.push(`/${username.toLowerCase()}`);
+      if (!res.ok) {
+        setError(res.error);
+        toast.error(res.error);
+        return;
       }
+      setSuccess(true);
+      toast.success("Profile saved.");
+      router.push(`/${username.toLowerCase()}`);
     });
   };
 

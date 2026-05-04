@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { uploadMap } from "@/app/actions/uploads";
+import { toast } from "@/lib/toast";
 import { FACTIONS, FACTION_LABEL } from "@/lib/factions";
 import {
   VERSIONS,
@@ -109,7 +110,12 @@ export function UploadForm() {
     const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       const res = await uploadMap(fd);
-      if (res && !res.ok) setError(res.error);
+      if (res && !res.ok) {
+        setError(res.error);
+        toast.error(res.error);
+      }
+      // Success path redirects server-side, so no toast needed —
+      // the user lands on the new map's detail page directly.
     });
   };
 

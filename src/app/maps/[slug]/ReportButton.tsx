@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { reportContent } from "@/app/actions/moderation";
+import { toast } from "@/lib/toast";
 
 /** Tiny "report" affordance shown next to a review or comment. Opens
  * an inline reason form on click; submits via server action. The
@@ -41,11 +42,13 @@ export function ReportButton({
       });
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       setDone(true);
       setOpen(false);
       setReason("");
+      toast.success("Reported. Moderators will take a look.");
     });
   };
 

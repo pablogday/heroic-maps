@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { createComment, deleteComment } from "@/app/actions/comments";
 import { adminSoftDeleteComment } from "@/app/actions/moderation";
 import { confirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "@/lib/toast";
 import { ReportButton } from "./ReportButton";
 
 interface CommentRow {
@@ -89,6 +90,7 @@ export function CommentThread({
         : await deleteComment({ commentId: id, slug });
       if (!res.ok) {
         setError(res.error);
+        toast.error(res.error);
         return;
       }
       // For author hard-delete, drop the row. For admin soft-delete,
@@ -100,6 +102,7 @@ export function CommentThread({
             )
           : prev.filter((c) => c.id !== id)
       );
+      if (viaAdmin) toast.info("Comment hidden by moderation.");
     });
   };
 

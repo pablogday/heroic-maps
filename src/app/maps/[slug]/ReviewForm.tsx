@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { submitReview, deleteReview } from "@/app/actions/reviews";
 import { confirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "@/lib/toast";
 
 export function ReviewForm({
   mapId,
@@ -35,7 +36,11 @@ export function ReviewForm({
     }
     startTransition(async () => {
       const res = await submitReview(mapId, rating, body, slug);
-      if (!res.ok) setError(res.error);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.success(isEdit ? "Review updated." : "Review posted.");
     });
   };
 
@@ -50,7 +55,11 @@ export function ReviewForm({
     if (!ok) return;
     startTransition(async () => {
       const res = await deleteReview(reviewId, mapId, slug);
-      if (!res.ok) setError(res.error);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast.info("Review removed.");
     });
   };
 

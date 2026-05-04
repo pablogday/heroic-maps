@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { adminSoftDeleteReview } from "@/app/actions/moderation";
 import { confirmDialog } from "@/components/ConfirmDialog";
+import { toast } from "@/lib/toast";
 
 /** Admin-only button next to a review. Soft-deletes via the
  * moderation action; the page revalidates and the row hides. */
@@ -24,7 +25,9 @@ export function AdminRemoveReview({
     });
     if (!ok) return;
     startTransition(async () => {
-      await adminSoftDeleteReview({ reviewId, slug });
+      const res = await adminSoftDeleteReview({ reviewId, slug });
+      if (res.ok) toast.info("Review hidden by moderation.");
+      else toast.error(res.error);
     });
   };
 

@@ -663,7 +663,10 @@ export default async function MapDetailPage({
 
         {similar.length > 0 && (
           <section className="mt-10">
-            <div className="mb-4 flex items-baseline justify-between">
+            {/* Stack on mobile — the subtitle is a long sentence and
+              * was eating the heading's horizontal space, forcing
+              * "Maps / like / this" to wrap one word per line. */}
+            <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
               <h2 className="font-display text-xl text-ink">
                 Maps like this
               </h2>
