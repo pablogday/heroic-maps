@@ -65,9 +65,13 @@ export function MapCard({
           {map.name}
         </h3>
         {map.factions && map.factions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {(map.factions as Faction[]).slice(0, 6).map((f) => (
-              <FactionCrest key={f} faction={f} size={18} />
+          /* 6-column grid spans the card's content width. Cells size
+           * evenly via minmax(0,1fr); fluid crests fill each cell so
+           * the faction art is legible. Maps with >6 towns wrap to a
+           * second row. */
+          <div className="mt-2 grid grid-cols-6 gap-1">
+            {(map.factions as Faction[]).map((f) => (
+              <FactionCrest key={f} faction={f} fluid />
             ))}
           </div>
         )}
