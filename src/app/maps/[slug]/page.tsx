@@ -27,6 +27,12 @@ import { PlayJournal } from "./PlayJournal";
 import { PreviewLightboxTrigger } from "./PreviewLightboxTrigger";
 import { HelpfulButton } from "./HelpfulButton";
 import { MapContentIcon, type MapContentKind } from "@/components/MapContentIcon";
+import {
+  VictoryIcon,
+  LossIcon,
+  inferVictoryKind,
+  inferLossKind,
+} from "@/components/ConditionIcon";
 
 function ObjectStatsCard({ stats }: { stats: Record<string, unknown> }) {
   const num = (k: string): number => {
@@ -636,21 +642,35 @@ export default async function MapDetailPage({
                 <h3 className="mb-3 font-display text-sm uppercase tracking-[0.15em] text-ink-soft">
                   Conditions
                 </h3>
-                <dl className="space-y-2 text-sm">
+                <dl className="space-y-3 text-sm">
                   {m.victoryCondition && (
-                    <div>
-                      <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
-                        Victory
-                      </dt>
-                      <dd className="text-ink">{m.victoryCondition}</dd>
+                    <div className="flex items-start gap-3">
+                      <VictoryIcon
+                        kind={inferVictoryKind(m.victoryCondition)}
+                        size={26}
+                        className="mt-0.5 text-emerald-700/80"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
+                          Victory
+                        </dt>
+                        <dd className="text-ink">{m.victoryCondition}</dd>
+                      </div>
                     </div>
                   )}
                   {m.lossCondition && (
-                    <div>
-                      <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
-                        Loss
-                      </dt>
-                      <dd className="text-ink">{m.lossCondition}</dd>
+                    <div className="flex items-start gap-3">
+                      <LossIcon
+                        kind={inferLossKind(m.lossCondition)}
+                        size={26}
+                        className="mt-0.5 text-red-800/75"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <dt className="text-xs uppercase tracking-wider text-ink-soft/80">
+                          Loss
+                        </dt>
+                        <dd className="text-ink">{m.lossCondition}</dd>
+                      </div>
                     </div>
                   )}
                 </dl>
