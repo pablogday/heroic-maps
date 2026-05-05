@@ -154,7 +154,7 @@ async function maybeRenderPreviews(
   surfaceUrl: string;
   undergroundUrl: string | null;
 } | null> {
-  const unwrapped = unwrapMapFile(new Uint8Array(raw));
+  const unwrapped = await unwrapMapFile(new Uint8Array(raw));
   if (!unwrapped.ok) return null;
   const parsed = parseH3m(unwrapped.bytes);
   if (!parsed.terrain) return null;

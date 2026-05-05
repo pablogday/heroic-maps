@@ -86,7 +86,7 @@ async function probe(
     const archive = new Uint8Array(
       await (await fetch(row.file_key)).arrayBuffer()
     );
-    const unwrapped = unwrapMapFile(archive);
+    const unwrapped = await unwrapMapFile(archive);
     if (!unwrapped.ok) return null;
     const raw =
       unwrapped.bytes[0] === 0x1f && unwrapped.bytes[1] === 0x8b

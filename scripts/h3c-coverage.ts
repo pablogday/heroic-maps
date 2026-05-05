@@ -47,7 +47,7 @@ async function main() {
             const buf = new Uint8Array(
               await (await fetch(row.file_key)).arrayBuffer()
             );
-            const u = unwrapMapFile(buf);
+            const u = await unwrapMapFile(buf);
             if (!u.ok) return;
             const raw =
               u.bytes[0] === 0x1f && u.bytes[1] === 0x8b

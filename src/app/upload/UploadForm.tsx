@@ -58,7 +58,7 @@ export function UploadForm() {
 
     try {
       const buf = new Uint8Array(await f.arrayBuffer());
-      const unwrapped = unwrapMapFile(buf);
+      const unwrapped = await unwrapMapFile(buf);
       if (!unwrapped.ok) return;
       const parsed = parseH3m(unwrapped.bytes);
       if (parsed.confidence === "failed" || !parsed.header) return;

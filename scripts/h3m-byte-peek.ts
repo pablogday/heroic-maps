@@ -43,7 +43,7 @@ async function main() {
     }>;
     if (!m) { console.error("not found"); process.exit(1); }
     const archive = new Uint8Array(await (await fetch(m.file_key)).arrayBuffer());
-    const u = unwrapMapFile(archive);
+    const u = await unwrapMapFile(archive);
     if (!u.ok) { console.error(u.reason); process.exit(1); }
     const raw = u.bytes[0] === 0x1f && u.bytes[1] === 0x8b ? gunzipSync(u.bytes) : u.bytes;
 

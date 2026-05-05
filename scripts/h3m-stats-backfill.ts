@@ -57,7 +57,7 @@ async function main() {
             const archive = new Uint8Array(
               await (await fetch(row.file_key)).arrayBuffer()
             );
-            const u = unwrapMapFile(archive);
+            const u = await unwrapMapFile(archive);
             if (!u.ok) {
               skippedUnparseable++;
               return;

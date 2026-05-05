@@ -280,7 +280,7 @@ async function fetchAndParse(
       };
     }
     const buf = Buffer.from(await res.arrayBuffer());
-    const unwrapped = unwrapMapFile(buf);
+    const unwrapped = await unwrapMapFile(buf);
     if (!unwrapped.ok) {
       return {
         format: "Unknown",

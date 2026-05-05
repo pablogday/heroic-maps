@@ -56,7 +56,7 @@ async function main() {
     const archive = new Uint8Array(
       await (await fetch(m.file_key)).arrayBuffer()
     );
-    const u = unwrapMapFile(archive);
+    const u = await unwrapMapFile(archive);
     if (!u.ok) {
       console.error(u.reason);
       process.exit(1);

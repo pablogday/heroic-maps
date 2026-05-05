@@ -166,7 +166,7 @@ async function checkMap(
     const res = await fetch(row.file_key);
     if (!res.ok) return "unparseable";
     const archive = new Uint8Array(await res.arrayBuffer());
-    const unwrapped = unwrapMapFile(archive);
+    const unwrapped = await unwrapMapFile(archive);
     if (!unwrapped.ok) return "unparseable";
     bytes = unwrapped.bytes;
   } catch {

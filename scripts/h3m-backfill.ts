@@ -149,7 +149,7 @@ async function processMap(
       return;
     }
     const buf = new Uint8Array(await res.arrayBuffer());
-    const unwrapped = unwrapMapFile(buf);
+    const unwrapped = await unwrapMapFile(buf);
     if (!unwrapped.ok) {
       stats.unparseable++;
       return;

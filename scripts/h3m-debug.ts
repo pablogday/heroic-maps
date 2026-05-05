@@ -53,7 +53,7 @@ async function main() {
 
     const res = await fetch(m.file_key as string);
     const archive = new Uint8Array(await res.arrayBuffer());
-    const unwrapped = unwrapMapFile(archive);
+    const unwrapped = await unwrapMapFile(archive);
     if (!unwrapped.ok) {
       console.error(`unwrap failed: ${unwrapped.reason}`);
       process.exit(1);
