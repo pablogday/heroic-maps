@@ -309,6 +309,35 @@ export async function getSimilarMaps(
 /**
  * Top-rated featured maps for the homepage.
  */
+/**
+ * Daily-rotating featured pick. Same map for every visitor on a
+ * given UTC day; rotates at midnight UTC. Selection is
+ * deterministic via `md5(id::text || YYYY-MM-DD)` ordering over a
+ * quality pool — no need to pre-compute or cache, the DB picks
+ * fresh for every request and Postgres returns the same row all day.
+ *
+ * Eligibility:
+ *   - has a preview image (so the card looks like something)
+ *   - either rated by ≥3 reviewers OR downloaded ≥500 times (signals
+ *     of community engagement, not just high source_rating spam)
+ */
+export async function getMapOfTheDay(viewerId: string | null = null) {
+  const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD' UTC
+  const [row] = await db
+    .select({ ...cardCols, bookmarked: bookmarkedExpr })
+    .from(maps)
+    .leftJoin(userMaps, joinUserMapsOn(viewerId))
+    .where(
+      and(
+        sql`${maps.previewKey} IS NOT NULL`,
+        sql`(${maps.ratingCount} >= 3 OR ${maps.downloadCount} >= 500)`
+      )
+    )
+    .orderBy(sql`md5(${maps.id}::text || ${today})`)
+    .limit(1);
+  return (row ?? null) as MapCardData | null;
+}
+
 export async function getFeaturedMaps(
   limit = 3,
   viewerId: string | null = null

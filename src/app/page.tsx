@@ -11,6 +11,10 @@ import {
   RecentlyReviewedCard,
   RecentlyReviewedSkeleton,
 } from "@/components/HomeActivityStrip";
+import {
+  MapOfTheDayCard,
+  MapOfTheDaySkeleton,
+} from "@/components/MapOfTheDay";
 import { getFeaturedMaps, VERSIONS } from "@/lib/maps";
 import { VERSION_LABEL } from "@/lib/map-constants";
 import { stagger } from "@/lib/stagger";
@@ -53,6 +57,15 @@ export default async function Home() {
               Upload a map
             </Link>
           </div>
+        </section>
+
+        {/* Daily-rotating featured pick — same map for everyone in
+          * a given UTC day, fresh tomorrow. Streamed via Suspense
+          * so the rest of the page paints first. */}
+        <section className="mb-10">
+          <Suspense fallback={<MapOfTheDaySkeleton />}>
+            <MapOfTheDayCard viewerId={viewerId} />
+          </Suspense>
         </section>
 
         <section className="mb-10">
